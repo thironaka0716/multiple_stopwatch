@@ -1,101 +1,871 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>Stopwatch</title>
+  <meta charset="UTF-8">
+  <title>マルチタスクストップウォッチ</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
   <style>
-    body {
-      text-align: center;
-      font-family: sans-serif;
-      margin: 50px;
+    * {
+      box-sizing: border-box;
+      margin: 0; 
+      padding: 0;
     }
-    .time-display {
-      font-size: 2.5rem;
-      font-weight: bold;
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      padding: 20px 20px 30px;
+    }
+
+    /* 追加フォーム & 一括操作ボタン */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
       margin-bottom: 20px;
     }
-    button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      margin: 5px;
+    .controls input {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      width: 200px;
+      transition: border-color 0.2s;
+    }
+    .controls input:focus {
+      border-color: #66aaff;
+    }
+    .controls button {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      background: #66aaff;
+      color: #fff;
       cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .controls button:hover {
+      background: #5595dd;
+    }
+
+    /* テーブル */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px; /* 行間 */
+    }
+
+    /* ===== カテゴリーヘッダー行 ===== */
+    .category-header-row {
+      background: #eee;
+      border-radius: 8px;
+      cursor: move; /* ドラッグ対象 */
+      user-select: none;
+    }
+    .category-header-row td {
+      padding: 10px;
+      font-weight: 600;
+      color: #333;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between; /* トグルボタンとタイトルを左右に */
+      gap: 10px;
+    }
+
+    /* ドラッグ中の見た目（カテゴリ） */
+    .category-header-row.drag-over {
+      outline: 2px dashed #66aaff;
+    }
+
+    .category-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer; /* トグル用 */
+    }
+    .category-toggle-btn {
+      padding: 0 6px;
+      border: none;
+      background: transparent;
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    /* ===== タスク行 ===== */
+    .task-row {
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      border-radius: 8px;
+      cursor: move; /* ドラッグ対象 */
+    }
+    .task-row td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+
+    /* ドラッグ中の見た目（タスク） */
+    .task-row.drag-over {
+      outline: 2px dashed #66aaff;
+    }
+
+    /* ===== 入力欄（カテゴリー・タスク名）===== */
+    .inline-input {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: #fcfcfc;
+      transition: border-color 0.2s;
+      font-size: 0.9rem;
+    }
+    .inline-input:focus {
+      outline: none;
+      border-color: #66aaff;
+      background: #fff;
+    }
+
+    /* ===== 時間表示 ===== */
+    .time-display {
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* ===== ボタン群 ===== */
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    .btn-group button {
+      padding: 0.4rem 0.7rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #fff;
+      transition: background 0.2s;
+    }
+    .start-stop-btn {
+      background: #66aaff;
+    }
+    .start-stop-btn:hover {
+      background: #5595dd;
+    }
+    .reset-btn {
+      background: #f0ad4e;
+    }
+    .reset-btn:hover {
+      background: #d99640;
+    }
+    .delete-btn {
+      background: #d9534f;
+    }
+    .delete-btn:hover {
+      background: #c9302c;
+    }
+
+    /* (サジェスト) */
+    datalist {
+      /* デフォルトで表示されないため通常CSSには影響なし */
     }
   </style>
 </head>
 <body>
 
-  <h1>ストップウォッチ</h1>
+<h1>マルチタスクストップウォッチ</h1>
+<div class="container">
 
-  <div class="time-display" id="timeDisplay">00:00:00</div>
+  <!-- 上部コントロール: タスク追加, 全STOP, 全RESET -->
+  <div class="controls">
+    <!-- 既存カテゴリーをサジェストに出すための dataList -->
+    <input type="text" id="categoryInput" list="categorySuggestions" placeholder="カテゴリー" />
+    <datalist id="categorySuggestions"></datalist>
 
-  <button id="startStopBtn">START</button>
-  <button id="resetBtn">RESET</button>
+    <input type="text" id="taskNameInput" placeholder="タスク名" />
+    <button id="addTaskBtn">＋タスク追加</button>
 
-  <script>
-    let startTime = 0;     // 計測開始時のタイムスタンプ
-    let elapsedTime = 0;   // 合計経過時間 (ミリ秒)
-    let timerId = null;    // setInterval() のID
-    let running = false;   // 動作中フラグ
+    <button id="stopAllBtn">STOP ALL</button>
+    <button id="resetAllBtn">RESET ALL</button>
+  </div>
 
-    const timeDisplay = document.getElementById('timeDisplay');
-    const startStopBtn = document.getElementById('startStopBtn');
-    const resetBtn = document.getElementById('resetBtn');
+  <table id="mainTable">
+    <!-- カテゴリーごとに <tbody> が並ぶ -->
+  </table>
 
-    // 時刻表示を更新する関数
-    function updateTime() {
-      const now = Date.now();
-      const diff = now - startTime;     // 再開後の経過時間
-      const total = elapsedTime + diff; // トータル経過時間
+</div>
 
-      // ミリ秒 -> 秒/分/時間に分解
-      const ms = Math.floor((total % 1000) / 10);       // ミリ秒(2桁にしたいので÷10)
-      const s  = Math.floor(total / 1000) % 60;         // 秒
-      const m  = Math.floor(total / 60000) % 60;        // 分
-      const h  = Math.floor(total / 3600000);           // 時 (必要なら表示)
+<script>
+/*
+  ストレージ保存データ:
+  {
+    tasks: Task[],
+    collapsedCategories: { [cat: string]: boolean },
+    knownCategories: string[],   // サジェスト用
+    categoryOrder: string[]      // カテゴリー並び順
+  }
 
-      // 2桁表示 (ミリ秒は2桁、秒/分/時間は2桁)
-      const hh = String(h).padStart(2, '0');
-      const mm = String(m).padStart(2, '0');
-      const ss = String(s).padStart(2, '0');
-      const mss = String(ms).padStart(2, '0');  // 今回は2桁
+  Taskオブジェクト:
+  {
+    id: number,
+    category: string,
+    name: string,
+    startTime: number,
+    elapsedTime: number,
+    running: boolean
+  }
 
-      // 表示フォーマット（ここでは「HH:MM:SS」の後ろにミリ秒2桁）
-      // 必要に応じて hh:mm:ss.ms にするか、mm:ss:ms だけにするなど調整してください。
-      timeDisplay.textContent = `${hh}:${mm}:${ss}`;
+  ※ カテゴリー同士の並べ替えは categoryOrder[] で管理し、描画時にこの順で表示
+*/
+
+// ------------------------------------
+// グローバル変数
+// ------------------------------------
+let tasks = [];
+let collapsedCategories = {};
+let knownCategories = [];
+let categoryOrder = [];
+
+const STORAGE_KEY = 'multiTaskStopwatchData_v4';
+
+const categoryInput = document.getElementById('categoryInput');
+const taskNameInput = document.getElementById('taskNameInput');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const stopAllBtn = document.getElementById('stopAllBtn');
+const resetAllBtn = document.getElementById('resetAllBtn');
+
+const mainTable = document.getElementById('mainTable');
+const categorySuggestions = document.getElementById('categorySuggestions');
+
+let globalTimerId = null;
+
+/* =====================================
+  localStorage に保存/読み込み
+===================================== */
+function saveToLocalStorage() {
+  try {
+    const data = {
+      tasks,
+      collapsedCategories,
+      knownCategories,
+      categoryOrder
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage保存失敗:', e);
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const savedStr = localStorage.getItem(STORAGE_KEY);
+    if (!savedStr) return;
+    const parsed = JSON.parse(savedStr);
+    if (parsed.tasks && Array.isArray(parsed.tasks)) {
+      tasks = parsed.tasks;
+    }
+    if (parsed.collapsedCategories && typeof parsed.collapsedCategories === 'object') {
+      collapsedCategories = parsed.collapsedCategories;
+    }
+    if (parsed.knownCategories && Array.isArray(parsed.knownCategories)) {
+      knownCategories = parsed.knownCategories;
+    }
+    if (parsed.categoryOrder && Array.isArray(parsed.categoryOrder)) {
+      categoryOrder = parsed.categoryOrder;
+    }
+  } catch (e) {
+    console.warn('localStorage読み込み失敗:', e);
+  }
+}
+
+/* =====================================
+  既知カテゴリーを操作
+===================================== */
+function addKnownCategory(cat) {
+  if (cat && !knownCategories.includes(cat)) {
+    knownCategories.push(cat);
+  }
+}
+
+function updateCategorySuggestions() {
+  categorySuggestions.innerHTML = '';
+  // knownCategories にあるものをすべて候補表示
+  knownCategories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    categorySuggestions.appendChild(opt);
+  });
+}
+
+/* =====================================
+  カテゴリー一覧を取得 (categoryOrder順)
+===================================== */
+function getOrderedCategories() {
+  // 現在のタスクから使用中カテゴリーを取得
+  const usedCats = [...new Set(tasks.map(t => t.category))];
+  // categoryOrder に載っているものが優先 => 既にないカテゴリーを省く => 追加された新カテゴリーを末尾に
+  // 1) 既存の categoryOrder をフィルタ => いま使われているカテゴリーだけ
+  let ordered = categoryOrder.filter(c => usedCats.includes(c));
+  // 2) まだ ordered に含まれていないカテゴリー(新規)を後ろに追加
+  usedCats.forEach(c => {
+    if (!ordered.includes(c)) {
+      ordered.push(c);
+    }
+  });
+  // これを categoryOrder に再設定（保存）
+  categoryOrder = ordered;
+  return ordered;
+}
+
+/* =====================================
+  カテゴリーを並べ替える (ドラッグ＆ドロップ)
+===================================== */
+function reorderCategories(fromIndex, toIndex) {
+  if (fromIndex === toIndex) return;
+  const c = categoryOrder.splice(fromIndex, 1)[0];
+  categoryOrder.splice(toIndex, 0, c);
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  タスクを追加
+===================================== */
+function addTask(category, name) {
+  const newCat = category || '';
+  const newName = name || '';
+
+  // 新カテゴリーなら knownCategories や collapsedCategories、categoryOrder に反映
+  if (!collapsedCategories.hasOwnProperty(newCat)) {
+    collapsedCategories[newCat] = false;
+  }
+  addKnownCategory(newCat);
+  // categoryOrderに未登録なら末尾に追加
+  if (!categoryOrder.includes(newCat)) {
+    categoryOrder.push(newCat);
+  }
+
+  // タスク作成
+  tasks.push({
+    id: Date.now(),
+    category: newCat,
+    name: newName,
+    startTime: 0,
+    elapsedTime: 0,
+    running: false
+  });
+
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  カテゴリー切替 (インライン編集)
+===================================== */
+function changeTaskCategory(task, newCategory) {
+  // 旧カテゴリーから新カテゴリーに移行
+  task.category = newCategory;
+  if (!collapsedCategories.hasOwnProperty(newCategory)) {
+    collapsedCategories[newCategory] = false;
+  }
+  addKnownCategory(newCategory);
+
+  // categoryOrder にないなら末尾に追加
+  if (!categoryOrder.includes(newCategory)) {
+    categoryOrder.push(newCategory);
+  }
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  タスク削除
+===================================== */
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  START/STOP
+===================================== */
+function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  if (!task.running) {
+    // START
+    task.running = true;
+    task.startTime = Date.now();
+    startGlobalTimer();
+  } else {
+    // STOP
+    const now = Date.now();
+    task.elapsedTime += (now - task.startTime);
+    task.running = false;
+  }
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  RESET
+===================================== */
+function resetTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task.running = false;
+  task.elapsedTime = 0;
+  task.startTime = 0;
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  全STOP, 全RESET
+===================================== */
+function stopAllTasks() {
+  const now = Date.now();
+  tasks.forEach(t => {
+    if (t.running) {
+      t.elapsedTime += (now - t.startTime);
+      t.running = false;
+    }
+  });
+  renderAll();
+  saveToLocalStorage();
+}
+function resetAllTasks() {
+  tasks.forEach(t => {
+    t.running = false;
+    t.elapsedTime = 0;
+    t.startTime = 0;
+  });
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  カテゴリー折りたたみトグル
+===================================== */
+function toggleCategoryCollapse(cat) {
+  collapsedCategories[cat] = !collapsedCategories[cat];
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  カテゴリー間のタスク移動
+   -> 別のカテゴリーの行やヘッダーにドロップされたとき
+===================================== */
+function moveTaskToCategory(taskId, toCategory, toIndexInCategory = null) {
+  // タスクを取り出し
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // 旧カテゴリから外す
+  const oldCategory = task.category;
+  // 旧カテゴリ内での並び替え用リスト
+  let oldCatTasks = tasks.filter(t => t.category === oldCategory);
+
+  // そのタスクを除去
+  oldCatTasks = oldCatTasks.filter(t => t.id !== taskId);
+
+  // 新カテゴリのタスクリスト
+  let newCatTasks = tasks.filter(t => t.category === toCategory);
+  // まだ使われていないカテゴリなら
+  if (!collapsedCategories.hasOwnProperty(toCategory)) {
+    collapsedCategories[toCategory] = false;
+  }
+  addKnownCategory(toCategory);
+  if (!categoryOrder.includes(toCategory)) {
+    categoryOrder.push(toCategory);
+  }
+
+  // タスクのcategoryを更新
+  task.category = toCategory;
+
+  // newCatTasks に挿入
+  if (toIndexInCategory === null || toIndexInCategory < 0 || toIndexInCategory > newCatTasks.length) {
+    // 指定がなければ末尾
+    newCatTasks.push(task);
+  } else {
+    // 指定位置に挿入
+    newCatTasks.splice(toIndexInCategory, 0, task);
+  }
+
+  // tasks全体を再構築
+  // 1) oldCategory以外のタスク
+  let remainingTasks = tasks.filter(t => t.category !== oldCategory && t.category !== toCategory);
+
+  // 2) oldCategoryタスク (task除去済み)
+  remainingTasks.push(...oldCatTasks);
+
+  // 3) newCategoryタスク
+  remainingTasks = remainingTasks.filter(t => t.category !== toCategory);
+  remainingTasks.push(...newCatTasks);
+
+  tasks = remainingTasks;
+
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  同一カテゴリー内でタスク並べ替え
+===================================== */
+function reorderTasksInCategory(category, fromIndex, toIndex) {
+  if (fromIndex === toIndex) return;
+
+  let catTasks = tasks.filter(t => t.category === category);
+  if (fromIndex < 0 || fromIndex >= catTasks.length) return;
+  if (toIndex < 0 || toIndex >= catTasks.length) return;
+
+  const [moved] = catTasks.splice(fromIndex, 1);
+  catTasks.splice(toIndex, 0, moved);
+
+  // ほかのカテゴリーのタスク
+  let remainingTasks = tasks.filter(t => t.category !== category);
+  // categoryのタスクを再配置
+  remainingTasks.push(...catTasks);
+
+  tasks = remainingTasks;
+
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* =====================================
+  時間表示 (mm:ss.mss)
+===================================== */
+function formatTime(msTotal) {
+  const ms = msTotal % 1000;
+  const sec = Math.floor(msTotal / 1000) % 60;
+  const min = Math.floor(msTotal / 60000);
+  const mm = String(min).padStart(2, '0');
+  const ss = String(sec).padStart(2, '0');
+  const mss = String(ms).padStart(3, '0');
+  return `${mm}:${ss}.${mss}`;
+}
+
+/* =====================================
+  全体描画
+===================================== */
+function renderAll() {
+  mainTable.innerHTML = '';
+
+  // カテゴリー一覧を categoryOrder の順序で並べて取得
+  const categories = getOrderedCategories();
+
+  // サジェスト更新
+  updateCategorySuggestions();
+
+  categories.forEach((cat, catIndex) => {
+    // <tbody> 1つが1つのカテゴリー
+    const tbody = document.createElement('tbody');
+    tbody.id = `cat-section-${cat}`;
+
+    // ---- カテゴリーヘッダー行 ----
+    const headerRow = document.createElement('tr');
+    headerRow.classList.add('category-header-row');
+    // カテゴリーheaderをドラッグすると並べ替え
+    headerRow.draggable = true;
+
+    // ドラッグ関連イベント
+    headerRow.addEventListener('dragstart', e => {
+      // カテゴリーヘッダー行をドラッグ
+      e.dataTransfer.setData('type', 'category'); // 種類: category
+      e.dataTransfer.setData('fromIndex', String(catIndex));
+    });
+    headerRow.addEventListener('dragover', e => {
+      e.preventDefault();
+      // ドロップ可能範囲かどうか
+      const dragType = e.dataTransfer.getData('type');
+      if (dragType === 'category') {
+        // カテゴリーをドラッグしている場合のみover
+        headerRow.classList.add('drag-over');
+      }
+    });
+    headerRow.addEventListener('dragleave', () => {
+      headerRow.classList.remove('drag-over');
+    });
+    headerRow.addEventListener('drop', e => {
+      e.preventDefault();
+      headerRow.classList.remove('drag-over');
+      const dragType = e.dataTransfer.getData('type');
+
+      if (dragType === 'category') {
+        // カテゴリー同士の並べ替え
+        const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'), 10);
+        const toIndex = catIndex;
+        reorderCategories(fromIndex, toIndex);
+      } else if (dragType === 'task') {
+        // タスクを別カテゴリーに移動
+        const taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
+        // drop先カテゴリーの末尾に追加
+        moveTaskToCategory(taskId, cat, null);
+      }
+    });
+
+    const headerTd = document.createElement('td');
+    headerTd.colSpan = 4;
+
+    // 左側: 折りたたみトグル＆カテゴリー名
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'category-info'; // デザイン上まとめるだけ
+    // 折りたたみボタン
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'category-toggle-btn';
+    toggleBtn.textContent = collapsedCategories[cat] ? '▶' : '▼';
+    toggleBtn.addEventListener('click', () => toggleCategoryCollapse(cat));
+    infoDiv.appendChild(toggleBtn);
+
+    // カテゴリータイトル
+    const catTitleSpan = document.createElement('span');
+    catTitleSpan.textContent = cat || '(未設定)';
+    infoDiv.appendChild(catTitleSpan);
+
+    headerTd.appendChild(infoDiv);
+    headerRow.appendChild(headerTd);
+    tbody.appendChild(headerRow);
+
+    // 折りたたみ中ならタスク行を描画しない
+    if (collapsedCategories[cat]) {
+      mainTable.appendChild(tbody);
+      return;
     }
 
-    // START/STOPボタン
-    startStopBtn.addEventListener('click', () => {
-      if (!running) {
-        // START
-        running = true;
-        startStopBtn.textContent = 'STOP';
-        startTime = Date.now();
-        timerId = setInterval(updateTime, 10); // 10ms毎に更新
-      } else {
-        // STOP
-        running = false;
-        startStopBtn.textContent = 'START';
-        clearInterval(timerId);
-        timerId = null;
-        // 最終的に経過時間を更新しておく
+    // カテゴリー内のタスク
+    const catTasks = tasks.filter(t => t.category === cat);
+
+    catTasks.forEach((task, indexInCat) => {
+      const taskRow = document.createElement('tr');
+      taskRow.classList.add('task-row');
+      taskRow.draggable = true;
+
+      // タスク行ドラッグイベント
+      taskRow.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('type', 'task');
+        e.dataTransfer.setData('taskId', String(task.id));
+        e.dataTransfer.setData('fromCategory', cat);
+        e.dataTransfer.setData('fromIndex', String(indexInCat));
+      });
+      // dragover
+      taskRow.addEventListener('dragover', e => {
+        e.preventDefault();
+        const dragType = e.dataTransfer.getData('type');
+        if (dragType === 'task') {
+          // 同じカテゴリなら並べ替え, 別カテゴリなら移動
+          taskRow.classList.add('drag-over');
+        }
+      });
+      taskRow.addEventListener('dragleave', () => {
+        taskRow.classList.remove('drag-over');
+      });
+      // drop
+      taskRow.addEventListener('drop', e => {
+        e.preventDefault();
+        taskRow.classList.remove('drag-over');
+
+        const dragType = e.dataTransfer.getData('type');
+        if (dragType === 'task') {
+          const fromCategory = e.dataTransfer.getData('fromCategory');
+          const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'), 10);
+          const draggedTaskId = parseInt(e.dataTransfer.getData('taskId'), 10);
+
+          if (fromCategory === cat) {
+            // 同じカテゴリ内の並べ替え
+            reorderTasksInCategory(cat, fromIndex, indexInCat);
+          } else {
+            // 他のカテゴリ => このカテゴリへ移動, position=indexInCat
+            moveTaskToCategory(draggedTaskId, cat, indexInCat);
+          }
+        }
+      });
+
+      // (1) カテゴリー (インライン編集)
+      const catTd = document.createElement('td');
+      const catInput = document.createElement('input');
+      catInput.type = 'text';
+      catInput.value = task.category;
+      catInput.className = 'inline-input';
+      // サジェスト
+      catInput.setAttribute('list', 'categorySuggestions');
+      catInput.addEventListener('change', () => {
+        changeTaskCategory(task, catInput.value);
+      });
+      catTd.appendChild(catInput);
+      taskRow.appendChild(catTd);
+
+      // (2) タスク名 (インライン編集)
+      const nameTd = document.createElement('td');
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = task.name;
+      nameInput.className = 'inline-input';
+      nameInput.addEventListener('change', () => {
+        task.name = nameInput.value;
+        saveToLocalStorage();
+      });
+      nameTd.appendChild(nameInput);
+      taskRow.appendChild(nameTd);
+
+      // (3) 経過時間
+      const timeTd = document.createElement('td');
+      timeTd.className = 'time-display';
+      if (task.running) {
         const now = Date.now();
-        elapsedTime += (now - startTime);
+        const diff = now - task.startTime;
+        timeTd.textContent = formatTime(task.elapsedTime + diff);
+      } else {
+        timeTd.textContent = formatTime(task.elapsedTime);
       }
+      taskRow.appendChild(timeTd);
+
+      // (4) 操作ボタン
+      const actionTd = document.createElement('td');
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'btn-group';
+
+      const startStopBtn = document.createElement('button');
+      startStopBtn.className = 'start-stop-btn';
+      startStopBtn.textContent = task.running ? 'STOP' : 'START';
+      startStopBtn.addEventListener('click', () => toggleTask(task.id));
+      btnGroup.appendChild(startStopBtn);
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'reset-btn';
+      resetBtn.textContent = 'RESET';
+      resetBtn.addEventListener('click', () => resetTask(task.id));
+      btnGroup.appendChild(resetBtn);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '削除';
+      deleteBtn.addEventListener('click', () => deleteTask(task.id));
+      btnGroup.appendChild(deleteBtn);
+
+      actionTd.appendChild(btnGroup);
+      taskRow.appendChild(actionTd);
+
+      tbody.appendChild(taskRow);
     });
 
-    // RESETボタン
-    resetBtn.addEventListener('click', () => {
-      running = false;
-      if (timerId) {
-        clearInterval(timerId);
-        timerId = null;
+    mainTable.appendChild(tbody);
+  });
+}
+
+/* =====================================
+  running中のタスクだけ部分更新
+===================================== */
+function renderRunningState() {
+  // カテゴリー順に走査
+  const categories = getOrderedCategories();
+  categories.forEach(cat => {
+    if (collapsedCategories[cat]) return; // 折りたたみ中は更新不要
+    const catTbody = document.getElementById(`cat-section-${cat}`);
+    if (!catTbody) return;
+
+    const catTasks = tasks.filter(t => t.category === cat);
+    const taskRows = catTbody.querySelectorAll('.task-row');
+    taskRows.forEach((tr, index) => {
+      const task = catTasks[index];
+      if (!task) return;
+
+      if (task.running) {
+        const now = Date.now();
+        const diff = now - task.startTime;
+        const timeTd = tr.children[2];
+        timeTd.textContent = formatTime(task.elapsedTime + diff);
       }
-      startStopBtn.textContent = 'START';
-      startTime = 0;
-      elapsedTime = 0;
-      timeDisplay.textContent = '00:00:00';
     });
-  </script>
+  });
+}
+
+/* =====================================
+  グローバルタイマー
+===================================== */
+function startGlobalTimer() {
+  if (globalTimerId) return;
+  globalTimerId = setInterval(() => {
+    let anyRunning = false;
+    tasks.forEach(t => {
+      if (t.running) anyRunning = true;
+    });
+    if (anyRunning) {
+      renderRunningState();
+    } else {
+      clearInterval(globalTimerId);
+      globalTimerId = null;
+    }
+  }, 100);
+}
+
+/* =====================================
+  ページを閉じる時 => 全タスクSTOP
+===================================== */
+window.addEventListener('beforeunload', () => {
+  const now = Date.now();
+  tasks.forEach(t => {
+    if (t.running) {
+      t.elapsedTime += (now - t.startTime);
+      t.running = false;
+    }
+  });
+  saveToLocalStorage();
+});
+
+/* =====================================
+  イベント設定
+===================================== */
+addTaskBtn.addEventListener('click', () => {
+  const cat = categoryInput.value.trim();
+  const name = taskNameInput.value.trim();
+  addTask(cat, name);
+  categoryInput.value = '';
+  taskNameInput.value = '';
+  categoryInput.focus();
+});
+
+stopAllBtn.addEventListener('click', stopAllTasks);
+resetAllBtn.addEventListener('click', resetAllTasks);
+
+/* =====================================
+  初期化
+===================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  loadFromLocalStorage();
+  renderAll();
+  if (tasks.some(t => t.running)) {
+    startGlobalTimer();
+  }
+});
+</script>
+
 </body>
 </html>
