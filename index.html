@@ -2,110 +2,100 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Stopwatch Sample</title>
+  <title>Stopwatch</title>
   <style>
     body {
-      font-family: sans-serif;
       text-align: center;
-      margin-top: 50px;
+      font-family: sans-serif;
+      margin: 50px;
     }
     .time-display {
-      font-size: 2rem;
+      font-size: 2.5rem;
+      font-weight: bold;
       margin-bottom: 20px;
     }
     button {
-      margin: 5px;
-      font-size: 1rem;
       padding: 10px 20px;
+      font-size: 1rem;
+      margin: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <div class="time-display" id="display">00 : 00 : 000</div>
+  <h1>ストップウォッチ</h1>
+
+  <div class="time-display" id="timeDisplay">00:00:00</div>
+
   <button id="startStopBtn">START</button>
   <button id="resetBtn">RESET</button>
 
   <script>
-    let startTime = 0;       // 計測を開始した時刻(ミリ秒)
-    let elapsedTime = 0;     // 合計経過時間(ミリ秒)
-    let timerId = null;      // setIntervalのID
-    let running = false;     // ストップウォッチが動作中かどうか
+    let startTime = 0;     // 計測開始時のタイムスタンプ
+    let elapsedTime = 0;   // 合計経過時間 (ミリ秒)
+    let timerId = null;    // setInterval() のID
+    let running = false;   // 動作中フラグ
 
-    const display = document.getElementById('display');
+    const timeDisplay = document.getElementById('timeDisplay');
     const startStopBtn = document.getElementById('startStopBtn');
     const resetBtn = document.getElementById('resetBtn');
 
     // 時刻表示を更新する関数
     function updateTime() {
-      // 現在時刻との差分(ミリ秒)
       const now = Date.now();
-      const diff = now - startTime;
-      // 現在の合計経過時間（以前のelapsedTimeに差分を加える）
-      const total = elapsedTime + diff;
+      const diff = now - startTime;     // 再開後の経過時間
+      const total = elapsedTime + diff; // トータル経過時間
 
-      // ミリ秒 => 分, 秒, ミリ秒に分解
-      const ms = total % 1000;               // ミリ秒
-      const s = Math.floor(total / 1000) % 60; // 秒
-      const m = Math.floor(total / 60000);     // 分
+      // ミリ秒 -> 秒/分/時間に分解
+      const ms = Math.floor((total % 1000) / 10);       // ミリ秒(2桁にしたいので÷10)
+      const s  = Math.floor(total / 1000) % 60;         // 秒
+      const m  = Math.floor(total / 60000) % 60;        // 分
+      const h  = Math.floor(total / 3600000);           // 時 (必要なら表示)
 
-      // 2桁, 3桁表示用に文字列をフォーマット
-      const formattedM = String(m).padStart(2, '0');
-      const formattedS = String(s).padStart(2, '0');
-      const formattedMs = String(ms).padStart(3, '0');
+      // 2桁表示 (ミリ秒は2桁、秒/分/時間は2桁)
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const ss = String(s).padStart(2, '0');
+      const mss = String(ms).padStart(2, '0');  // 今回は2桁
 
-      // HTMLに反映
-      display.textContent = `${formattedM} : ${formattedS} : ${formattedMs}`;
+      // 表示フォーマット（ここでは「HH:MM:SS」の後ろにミリ秒2桁）
+      // 必要に応じて hh:mm:ss.ms にするか、mm:ss:ms だけにするなど調整してください。
+      timeDisplay.textContent = `${hh}:${mm}:${ss}`;
     }
 
-    // ストップウォッチをスタートまたはストップする処理
-    function startStop() {
+    // START/STOPボタン
+    startStopBtn.addEventListener('click', () => {
       if (!running) {
-        // 停止中の場合はスタートする
+        // START
         running = true;
         startStopBtn.textContent = 'STOP';
-
-        // 現在時刻からスタートする
         startTime = Date.now();
-        // 一定間隔で時間表示を更新
-        timerId = setInterval(updateTime, 10);
-
+        timerId = setInterval(updateTime, 10); // 10ms毎に更新
       } else {
-        // 動作中の場合はストップする
+        // STOP
         running = false;
         startStopBtn.textContent = 'START';
-
-        // タイマーを止めて、経過時間を更新
         clearInterval(timerId);
         timerId = null;
-
-        // 最後にupdateTimeを呼んで最新状態にしてからelapsedTimeを上書き
-        updateTime();
-        // stopした時点での経過時間 totalを算出
+        // 最終的に経過時間を更新しておく
         const now = Date.now();
         elapsedTime += (now - startTime);
       }
-    }
+    });
 
-    // リセット処理
-    function reset() {
-      // タイマーを止める
+    // RESETボタン
+    resetBtn.addEventListener('click', () => {
+      running = false;
       if (timerId) {
         clearInterval(timerId);
         timerId = null;
       }
-      running = false;
       startStopBtn.textContent = 'START';
-
-      // 経過時間を0にして表示をリセット
       startTime = 0;
       elapsedTime = 0;
-      display.textContent = '00 : 00 : 000';
-    }
-
-    // ボタンのイベント設定
-    startStopBtn.addEventListener('click', startStop);
-    resetBtn.addEventListener('click', reset);
+      timeDisplay.textContent = '00:00:00';
+    });
   </script>
 </body>
 </html>
