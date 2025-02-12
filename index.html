@@ -2,15 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>マルチタスクストップウォッチ</title>
-  <!-- Google Fonts -->
+  <title>マルチタスクストップウォッチ (Flex, Wider Inputs)</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
   <style>
+    /* ==== ベースCSS ==== */
     * {
       box-sizing: border-box;
-      margin: 0; 
+      margin: 0;
       padding: 0;
     }
     body {
@@ -18,6 +18,8 @@
       background: #f9f9f9;
       color: #333;
       padding: 30px;
+      min-height: 100vh;
+      position: relative;
     }
     h1 {
       text-align: center;
@@ -26,16 +28,36 @@
       color: #444;
     }
 
+    /* ==== コンテナ ==== */
     .container {
-      max-width: 960px;
+      max-width: 1000px;
       margin: 0 auto;
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       padding: 20px 20px 30px;
+      position: relative;
     }
 
-    /* 追加フォーム & 一括操作ボタン */
+    /* ==== 手動で保存ボタン (右上端固定) ==== */
+    .manual-save-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 0.5rem 1rem;
+      background: #666;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      z-index: 9999;
+    }
+    .manual-save-btn:hover {
+      background: #555;
+    }
+
+    /* ==== コントロールパネル ==== */
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -49,7 +71,6 @@
       border-radius: 6px;
       font-size: 0.9rem;
       outline: none;
-      width: 200px;
       transition: border-color 0.2s;
     }
     .controls input:focus {
@@ -69,140 +90,274 @@
       background: #5595dd;
     }
 
-    /* テーブル */
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 8px; /* 行間 */
+    /* スマホ幅でコントロールを縦並びに */
+    @media (max-width: 600px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .controls input,
+      .controls button {
+        width: 100%;
+      }
     }
 
-    /* ===== カテゴリーヘッダー行 ===== */
-    .category-header-row {
+    /* ==== カテゴリー一覧 (縦) ==== */
+    #categories-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ==== カテゴリーカード ==== */
+    .category-card {
       background: #eee;
       border-radius: 8px;
-      cursor: move; /* ドラッグ対象 */
+      padding: 10px;
+      position: relative;
       user-select: none;
     }
-    .category-header-row td {
-      padding: 10px;
-      font-weight: 600;
-      color: #333;
-      border: none;
+    .category-card.drag-over {
+      outline: 2px dashed #66aaff;
+    }
+
+    /* カテゴリヘッダー */
+    .category-header {
       display: flex;
       align-items: center;
-      justify-content: space-between; /* トグルボタンとタイトルを左右に */
+      margin-bottom: 10px;
+      gap: 10px;
+      cursor: move;
+    }
+    .cat-handle {
+      width: 20px;
+      text-align: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      cursor: move;
+    }
+    .cat-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .cat-toggle-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .cat-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cat-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* カラーパレット */
+    .color-palette {
+      position: relative;
+    }
+    .color-palette-btn {
+      background: #ddd;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .color-palette-btn:hover {
+      background: #ccc;
+    }
+    .color-preview {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      margin-left: 5px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .color-palette-popup {
+      display: none;
+      position: absolute;
+      top: 28px;
+      left: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 8px;
+      z-index: 1000;
+      width: 140px;
+    }
+    .color-palette.open .color-palette-popup {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .color-swatch:hover {
+      border-color: #666;
+    }
+
+    /* +ボタン */
+    .cat-add-btn {
+      background: #5cb85c;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.8rem;
+      color: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .cat-add-btn:hover {
+      background: #4cae4c;
+    }
+
+    /* タスクリスト (横並び, wrap) */
+    .task-list {
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
     }
 
-    /* ドラッグ中の見た目（カテゴリ） */
-    .category-header-row.drag-over {
-      outline: 2px dashed #66aaff;
-    }
-
-    .category-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer; /* トグル用 */
-    }
-    .category-toggle-btn {
-      padding: 0 6px;
-      border: none;
-      background: transparent;
-      font-size: 1.2rem;
-      line-height: 1;
-      cursor: pointer;
-    }
-
-    /* ===== タスク行 ===== */
-    .task-row {
+    /* ==== タスクカード ==== */
+    .task-card {
       background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
       border-radius: 8px;
-      cursor: move; /* ドラッグ対象 */
-    }
-    .task-row td {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      user-select: none;
+      display: flex;
+      /* 横幅が広いときは1行,
+         狭くなると wrapして2,3行 */
+      flex-flow: row nowrap;
+      gap: 6px;
+      align-items: center;
       padding: 8px;
-      vertical-align: middle;
+      cursor: move;
+      /* ここを100%にすると
+         横幅いっぱいに伸び、長い名前が入力しやすい */
+      width: 100%;
     }
-
-    /* ドラッグ中の見た目（タスク） */
-    .task-row.drag-over {
+    .task-card.drag-over {
       outline: 2px dashed #66aaff;
     }
 
-    /* ===== 入力欄（カテゴリー・タスク名）===== */
-    .inline-input {
-      width: 100%;
-      padding: 6px;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      background: #fcfcfc;
-      transition: border-color 0.2s;
-      font-size: 0.9rem;
-    }
-    .inline-input:focus {
-      outline: none;
-      border-color: #66aaff;
-      background: #fff;
+    /* ここで画面が狭い場合(例:900px以下)に2行以上に */
+    @media (max-width: 900px) {
+      .task-card {
+        flex-flow: row wrap; 
+      }
     }
 
-    /* ===== 時間表示 ===== */
+    .task-handle {
+      width: 20px;
+      text-align: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      cursor: move;
+    }
+
+    /* カテゴリ欄, タスク名, 時間, ボタンをflex要素に */
+    /* 幅を固定せず、伸縮できるようにflex:1 */
+    .task-cat {
+      flex: 1 1 100px; 
+      min-width: 80px;
+    }
+    .task-name {
+      flex: 2 1 200px; 
+      min-width: 120px; 
+    }
     .time-display {
+      flex: 0 1 auto;
+      min-width: 60px;
       font-family: monospace;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.9rem;
       text-align: center;
     }
-
-    /* ===== ボタン群 ===== */
     .btn-group {
       display: flex;
-      gap: 6px;
-      justify-content: center;
+      flex-shrink: 0;
+      gap: 4px;
     }
     .btn-group button {
-      padding: 0.4rem 0.7rem;
       border: none;
       border-radius: 6px;
+      padding: 0.3rem 0.6rem;
       font-size: 0.8rem;
       cursor: pointer;
       color: #fff;
-      transition: background 0.2s;
     }
-    .start-stop-btn {
-      background: #66aaff;
-    }
-    .start-stop-btn:hover {
-      background: #5595dd;
-    }
-    .reset-btn {
-      background: #f0ad4e;
-    }
-    .reset-btn:hover {
-      background: #d99640;
-    }
-    .delete-btn {
-      background: #d9534f;
-    }
-    .delete-btn:hover {
-      background: #c9302c;
+    .start-btn { background: #66aaff; }
+    .start-btn:hover { background: #5595dd; }
+    .stop-btn { background: #d9534f; }
+    .stop-btn:hover { background: #c9302c; }
+    .reset-btn { background: #f0ad4e; }
+    .reset-btn:hover { background: #d99640; }
+    .delete-btn { background: #d9534f; }
+    .delete-btn:hover { background: #c9302c; }
+
+    /* スマホ幅でさらに縮小 */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+      }
+      .container {
+        padding: 10px;
+      }
+      .controls input, .controls button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+      }
+      .cat-handle, .task-handle {
+        width: 16px;
+        font-size: 0.9rem;
+      }
+      .task-cat { min-width: 60px; }
+      .task-name { min-width: 80px; }
+      .time-display {
+        font-size: 0.8rem;
+        min-width: 50px;
+      }
+      .btn-group button {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+      }
     }
 
-    /* (サジェスト) */
-    datalist {
-      /* デフォルトで表示されないため通常CSSには影響なし */
-    }
   </style>
 </head>
 <body>
 
-<h1>マルチタスクストップウォッチ</h1>
+<h1>マルチタスクストップウォッチ (Wider Inputs)</h1>
+
+<button id="manualSaveBtn" class="manual-save-btn">手動で保存</button>
+
 <div class="container">
 
-  <!-- 上部コントロール: タスク追加, 全STOP, 全RESET -->
   <div class="controls">
-    <!-- 既存カテゴリーをサジェストに出すための dataList -->
     <input type="text" id="categoryInput" list="categorySuggestions" placeholder="カテゴリー" />
     <datalist id="categorySuggestions"></datalist>
 
@@ -213,659 +368,650 @@
     <button id="resetAllBtn">RESET ALL</button>
   </div>
 
-  <table id="mainTable">
-    <!-- カテゴリーごとに <tbody> が並ぶ -->
-  </table>
+  <div id="categories-container"></div>
 
 </div>
 
 <script>
-/*
-  ストレージ保存データ:
-  {
-    tasks: Task[],
-    collapsedCategories: { [cat: string]: boolean },
-    knownCategories: string[],   // サジェスト用
-    categoryOrder: string[]      // カテゴリー並び順
-  }
-
-  Taskオブジェクト:
-  {
-    id: number,
-    category: string,
-    name: string,
-    startTime: number,
-    elapsedTime: number,
-    running: boolean
-  }
-
-  ※ カテゴリー同士の並べ替えは categoryOrder[] で管理し、描画時にこの順で表示
-*/
-
-// ------------------------------------
-// グローバル変数
-// ------------------------------------
+/* ==================================================
+   データ & 変数
+================================================== */
 let tasks = [];
 let collapsedCategories = {};
 let knownCategories = [];
 let categoryOrder = [];
+let categoryColors = {};
 
-const STORAGE_KEY = 'multiTaskStopwatchData_v4';
+const STORAGE_KEY = 'multiTaskStopwatchData_final';
 
+const PRESET_COLORS = [
+  "#F94144","#F3722C","#F8961E","#F9844A","#F9C74F",
+  "#90BE6D","#43AA8B","#4D908E","#577590","#277DA1",
+  "#64C3EE","#6367A9","#B986C8","#F48FB1","#FFB5E8",
+  "#FFDAC1","#B5EAD7","#C7CEEA","#FF9CEE","#F6B7C6"
+];
+
+/* DOM */
+const manualSaveBtn = document.getElementById('manualSaveBtn');
 const categoryInput = document.getElementById('categoryInput');
 const taskNameInput = document.getElementById('taskNameInput');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const stopAllBtn = document.getElementById('stopAllBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
-
-const mainTable = document.getElementById('mainTable');
+const categoriesContainer = document.getElementById('categories-container');
 const categorySuggestions = document.getElementById('categorySuggestions');
 
 let globalTimerId = null;
 
-/* =====================================
-  localStorage に保存/読み込み
-===================================== */
-function saveToLocalStorage() {
+/* ==================================================
+   localStorage
+================================================== */
+function saveToLocalStorage(){
   try {
-    const data = {
-      tasks,
-      collapsedCategories,
-      knownCategories,
-      categoryOrder
-    };
+    const data = { tasks, collapsedCategories, knownCategories, categoryOrder, categoryColors };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.warn('localStorage保存失敗:', e);
+    console.log("Saved to localStorage.");
+  } catch(e){
+    console.warn("Saving localStorage failed:", e);
   }
 }
 
-function loadFromLocalStorage() {
+function loadFromLocalStorage(){
   try {
-    const savedStr = localStorage.getItem(STORAGE_KEY);
-    if (!savedStr) return;
-    const parsed = JSON.parse(savedStr);
-    if (parsed.tasks && Array.isArray(parsed.tasks)) {
-      tasks = parsed.tasks;
-    }
-    if (parsed.collapsedCategories && typeof parsed.collapsedCategories === 'object') {
-      collapsedCategories = parsed.collapsedCategories;
-    }
-    if (parsed.knownCategories && Array.isArray(parsed.knownCategories)) {
-      knownCategories = parsed.knownCategories;
-    }
-    if (parsed.categoryOrder && Array.isArray(parsed.categoryOrder)) {
-      categoryOrder = parsed.categoryOrder;
-    }
-  } catch (e) {
-    console.warn('localStorage読み込み失敗:', e);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(!saved) return;
+    const parsed = JSON.parse(saved);
+    if(parsed.tasks) tasks=parsed.tasks;
+    if(parsed.collapsedCategories) collapsedCategories=parsed.collapsedCategories;
+    if(parsed.knownCategories) knownCategories=parsed.knownCategories;
+    if(parsed.categoryOrder) categoryOrder=parsed.categoryOrder;
+    if(parsed.categoryColors) categoryColors=parsed.categoryColors;
+  } catch(e){
+    console.warn("Loading localStorage failed:", e);
   }
 }
 
-/* =====================================
-  既知カテゴリーを操作
-===================================== */
-function addKnownCategory(cat) {
-  if (cat && !knownCategories.includes(cat)) {
+/* ==================================================
+   カテゴリ管理
+================================================== */
+function addKnownCategory(cat){
+  if(cat && !knownCategories.includes(cat)){
     knownCategories.push(cat);
   }
 }
+function getOrderedCategories(){
+  const usedCats=[...new Set(tasks.map(t=>t.category))];
+  let ordered=categoryOrder.filter(c=>usedCats.includes(c));
+  usedCats.forEach(c=>{
+    if(!ordered.includes(c)){
+      ordered.push(c);
+    }
+  });
+  categoryOrder=ordered;
+  return ordered;
+}
+function reorderCategories(fromIndex,toIndex){
+  if(fromIndex===toIndex)return;
+  const moved=categoryOrder.splice(fromIndex,1)[0];
+  categoryOrder.splice(toIndex,0,moved);
+  renderAll();
+  saveToLocalStorage();
+}
+function toggleCategoryCollapse(cat){
+  collapsedCategories[cat]=!collapsedCategories[cat];
+  renderAll();
+  saveToLocalStorage();
+}
+function getCategoryColor(cat){
+  return categoryColors[cat]||'#e0e0e0';
+}
+function setCategoryColor(cat, colVal){
+  categoryColors[cat]=colVal;
+  saveToLocalStorage();
+  renderAll();
+}
 
-function updateCategorySuggestions() {
-  categorySuggestions.innerHTML = '';
-  // knownCategories にあるものをすべて候補表示
-  knownCategories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
+/* ==================================================
+   カテゴリ掃除/自動色
+================================================== */
+function cleanupCategories(){
+  const usedCats= new Set(tasks.map(t=>t.category));
+  knownCategories= knownCategories.filter(c=> usedCats.has(c) && c!=='');
+  categoryOrder= categoryOrder.filter(c=> usedCats.has(c));
+  for(const c in categoryColors){
+    if(!usedCats.has(c)){
+      delete categoryColors[c];
+    }
+  }
+  for(const c in collapsedCategories){
+    if(!usedCats.has(c)){
+      delete collapsedCategories[c];
+    }
+  }
+  for(const c of usedCats){
+    if(c!=='' && !categoryColors[c]){
+      autoAssignColor(c);
+    }
+  }
+}
+function autoAssignColor(cat){
+  if(categoryColors[cat]) return;
+  const used=new Set(Object.values(categoryColors));
+  for(const col of PRESET_COLORS){
+    if(!used.has(col)){
+      categoryColors[cat]=col;
+      return;
+    }
+  }
+  categoryColors[cat]=PRESET_COLORS[0]||'#e0e0e0';
+}
+
+/* ==================================================
+   タスク操作
+================================================== */
+function addTask(cat,name){
+  const c=cat||'';
+  const nm=name||'';
+  if(!collapsedCategories.hasOwnProperty(c)){
+    collapsedCategories[c]=false;
+  }
+  addKnownCategory(c);
+  if(!categoryOrder.includes(c)){
+    categoryOrder.push(c);
+  }
+  tasks.push({
+    id:Date.now(),
+    category:c,
+    name:nm,
+    startTime:0,
+    elapsedTime:0,
+    running:false
+  });
+  cleanupCategories();
+  renderAll();
+  saveToLocalStorage();
+}
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  cleanupCategories();
+  renderAll();
+  saveToLocalStorage();
+}
+function toggleTask(id){
+  const task= tasks.find(t=>t.id===id);
+  if(!task)return;
+  if(!task.running){
+    task.running=true;
+    task.startTime=Date.now();
+    startGlobalTimer();
+  } else {
+    const now=Date.now();
+    task.elapsedTime+=(now-task.startTime);
+    task.running=false;
+  }
+  renderAll();
+  saveToLocalStorage();
+}
+function resetTask(id){
+  const task= tasks.find(t=>t.id===id);
+  if(!task)return;
+  task.running=false;
+  task.elapsedTime=0;
+  task.startTime=0;
+  renderAll();
+  saveToLocalStorage();
+}
+function changeTaskCategoryInline(task,newCat){
+  task.category=newCat;
+  if(!collapsedCategories.hasOwnProperty(newCat)){
+    collapsedCategories[newCat]=false;
+  }
+  addKnownCategory(newCat);
+  if(!categoryOrder.includes(newCat)){
+    categoryOrder.push(newCat);
+  }
+  cleanupCategories();
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* ==================================================
+   並べ替え
+================================================== */
+function reorderTasksInCategory(cat, fromIndex,toIndex){
+  if(fromIndex===toIndex)return;
+  let catTasks= tasks.filter(t=>t.category===cat);
+  if(fromIndex<0||fromIndex>=catTasks.length)return;
+  if(toIndex<0||toIndex>catTasks.length)return;
+  const [moved]= catTasks.splice(fromIndex,1);
+  catTasks.splice(toIndex,0,moved);
+  let rest= tasks.filter(t=>t.category!==cat);
+  rest.push(...catTasks);
+  tasks=rest;
+  renderAll();
+  saveToLocalStorage();
+}
+function moveTaskToCategory(taskId,newCat,newIndex=null){
+  const task= tasks.find(t=>t.id===taskId);
+  if(!task)return;
+  const oldCat=task.category;
+
+  let oldCatTasks= tasks.filter(t=> t.category===oldCat && t.id!==taskId);
+  let newCatTasks= tasks.filter(t=> t.category===newCat);
+
+  task.category=newCat;
+  if(!collapsedCategories.hasOwnProperty(newCat)){
+    collapsedCategories[newCat]=false;
+  }
+  addKnownCategory(newCat);
+  if(!categoryOrder.includes(newCat)){
+    categoryOrder.push(newCat);
+  }
+
+  if(newIndex===null||newIndex<0||newIndex>newCatTasks.length){
+    newCatTasks.push(task);
+  } else {
+    newCatTasks.splice(newIndex,0,task);
+  }
+  let rest= tasks.filter(t=> t.category!==oldCat && t.category!==newCat);
+  rest.push(...oldCatTasks);
+  rest= rest.filter(t=> t.category!==newCat);
+  rest.push(...newCatTasks);
+
+  tasks=rest;
+  cleanupCategories();
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* ==================================================
+   時間表示
+================================================== */
+function formatTime(msTotal){
+  const ms= msTotal%1000;
+  const sec=Math.floor(msTotal/1000)%60;
+  const min=Math.floor(msTotal/60000);
+  const mm= String(min).padStart(2,'0');
+  const ss= String(sec).padStart(2,'0');
+  const mss=String(ms).padStart(3,'0');
+  return `${mm}:${ss}.${mss}`;
+}
+
+/* ==================================================
+   全STOP / 全RESET
+================================================== */
+function stopAllTasks(){
+  const now=Date.now();
+  tasks.forEach(t=>{
+    if(t.running){
+      t.elapsedTime+=(now-t.startTime);
+      t.running=false;
+    }
+  });
+  renderAll();
+  saveToLocalStorage();
+}
+function resetAllTasks(){
+  tasks.forEach(t=>{
+    t.running=false;
+    t.elapsedTime=0;
+    t.startTime=0;
+  });
+  renderAll();
+  saveToLocalStorage();
+}
+
+/* ==================================================
+   画面描画
+================================================== */
+function renderAll(){
+  categoriesContainer.innerHTML='';
+
+  cleanupCategories();
+  const categories= getOrderedCategories();
+
+  categories.forEach((cat, catIndex)=>{
+    // カテゴリカード
+    const catCard=document.createElement('div');
+    catCard.className='category-card';
+    catCard.draggable=true;
+
+    // ドラッグ
+    catCard.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('type','category');
+      e.dataTransfer.setData('fromIndex', String(catIndex));
+    });
+    catCard.addEventListener('dragover', e=>{
+      e.preventDefault();
+      const dragType=e.dataTransfer.getData('type');
+      if(dragType==='category' || dragType==='task'){
+        catCard.classList.add('drag-over');
+      }
+    });
+    catCard.addEventListener('dragleave',()=>{
+      catCard.classList.remove('drag-over');
+    });
+    catCard.addEventListener('drop', e=>{
+      e.preventDefault();
+      catCard.classList.remove('drag-over');
+      const dragType=e.dataTransfer.getData('type');
+      if(dragType==='category'){
+        const fromIndex=parseInt(e.dataTransfer.getData('fromIndex'),10);
+        reorderCategories(fromIndex,catIndex);
+      } else if(dragType==='task'){
+        const tid=parseInt(e.dataTransfer.getData('taskId'),10);
+        moveTaskToCategory(tid, cat, null);
+      }
+    });
+
+    // カテゴリヘッダー
+    const catHeader=document.createElement('div');
+    catHeader.className='category-header';
+    catHeader.style.backgroundColor= getCategoryColor(cat);
+
+    // (1) ハンドル
+    const handleDiv=document.createElement('div');
+    handleDiv.className='cat-handle';
+    handleDiv.textContent='≡';
+    catHeader.appendChild(handleDiv);
+
+    // (2) 左(折りたたみ + 名前)
+    const catInfo=document.createElement('div');
+    catInfo.className='cat-info';
+
+    const toggleBtn=document.createElement('button');
+    toggleBtn.className='cat-toggle-btn';
+    toggleBtn.textContent= collapsedCategories[cat]?'▶':'▼';
+    toggleBtn.addEventListener('click',()=>{
+      toggleCategoryCollapse(cat);
+    });
+    catInfo.appendChild(toggleBtn);
+
+    const catNameSpan=document.createElement('span');
+    catNameSpan.className='cat-name';
+    catNameSpan.textContent= cat||'(未設定)';
+    catInfo.appendChild(catNameSpan);
+
+    catHeader.appendChild(catInfo);
+
+    // (3) 右 (カラーパレット + "+"ボタン)
+    const catRight=document.createElement('div');
+    catRight.className='cat-right';
+
+    // カラーパレット
+    const paletteWrap=document.createElement('div');
+    paletteWrap.className='color-palette';
+    paletteWrap.style.position='relative';
+
+    const colorBtn=document.createElement('button');
+    colorBtn.className='color-palette-btn';
+    colorBtn.textContent='Color';
+
+    const preview=document.createElement('div');
+    preview.className='color-preview';
+    preview.style.backgroundColor=getCategoryColor(cat);
+    colorBtn.appendChild(preview);
+
+    const popup=document.createElement('div');
+    popup.className='color-palette-popup';
+    PRESET_COLORS.forEach(col=>{
+      const swatch=document.createElement('div');
+      swatch.className='color-swatch';
+      swatch.style.backgroundColor=col;
+      swatch.addEventListener('click',()=>{
+        setCategoryColor(cat,col);
+        preview.style.backgroundColor=col;
+        paletteWrap.classList.remove('open');
+      });
+      popup.appendChild(swatch);
+    });
+    paletteWrap.appendChild(colorBtn);
+    paletteWrap.appendChild(popup);
+
+    colorBtn.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      paletteWrap.classList.toggle('open');
+    });
+    document.addEventListener('click',(evt)=>{
+      if(!paletteWrap.contains(evt.target)){
+        paletteWrap.classList.remove('open');
+      }
+    });
+
+    catRight.appendChild(paletteWrap);
+
+    // +ボタン => 新タスク
+    const plusBtn=document.createElement('button');
+    plusBtn.className='cat-add-btn';
+    plusBtn.textContent='+';
+    plusBtn.addEventListener('click',()=>{
+      addTask(cat,'New Task');
+    });
+    catRight.appendChild(plusBtn);
+
+    catHeader.appendChild(catRight);
+
+    catCard.appendChild(catHeader);
+
+    // タスク一覧
+    if(!collapsedCategories[cat]){
+      const taskList=document.createElement('div');
+      taskList.className='task-list';
+      const catTasks= tasks.filter(t=>t.category===cat);
+      catTasks.forEach((task,indexInCat)=>{
+        const taskDiv=document.createElement('div');
+        taskDiv.className='task-card';
+        taskDiv.draggable=true;
+        taskDiv.style.backgroundColor=getCategoryColor(cat);
+
+        // ドラッグ
+        taskDiv.addEventListener('dragstart', e=>{
+          e.dataTransfer.setData('type','task');
+          e.dataTransfer.setData('taskId',String(task.id));
+          e.dataTransfer.setData('fromCategory', cat);
+          e.dataTransfer.setData('fromIndex',String(indexInCat));
+        });
+        taskDiv.addEventListener('dragover', e=>{
+          e.preventDefault();
+          if(e.dataTransfer.getData('type')==='task'){
+            taskDiv.classList.add('drag-over');
+          }
+        });
+        taskDiv.addEventListener('dragleave', ()=>{
+          taskDiv.classList.remove('drag-over');
+        });
+        taskDiv.addEventListener('drop', e=>{
+          e.preventDefault();
+          taskDiv.classList.remove('drag-over');
+          if(e.dataTransfer.getData('type')==='task'){
+            const fromCat=e.dataTransfer.getData('fromCategory');
+            const fromIndex=parseInt(e.dataTransfer.getData('fromIndex'),10);
+            const tid=parseInt(e.dataTransfer.getData('taskId'),10);
+            if(fromCat===cat){
+              reorderTasksInCategory(cat, fromIndex, indexInCat);
+            } else {
+              moveTaskToCategory(tid,cat,indexInCat);
+            }
+          }
+        });
+
+        // (1) ハンドル(≡)
+        const taskHandle=document.createElement('div');
+        taskHandle.className='task-handle';
+        taskHandle.textContent='≡';
+        taskDiv.appendChild(taskHandle);
+
+        // (2) カテゴリ (inline)
+        const catInput=document.createElement('input');
+        catInput.type='text';
+        catInput.className='inline-input task-cat';
+        catInput.value=task.category;
+        catInput.setAttribute('list','categorySuggestions');
+        catInput.addEventListener('change',()=>{
+          changeTaskCategoryInline(task, catInput.value);
+        });
+        taskDiv.appendChild(catInput);
+
+        // (3) タスク名
+        const nameInput=document.createElement('input');
+        nameInput.type='text';
+        nameInput.className='inline-input task-name';
+        nameInput.value=task.name;
+        nameInput.addEventListener('change',()=>{
+          task.name=nameInput.value;
+          saveToLocalStorage();
+        });
+        taskDiv.appendChild(nameInput);
+
+        // (4) 時間
+        const timeDiv=document.createElement('div');
+        timeDiv.className='time-display';
+        if(task.running){
+          const now=Date.now();
+          timeDiv.textContent=formatTime(task.elapsedTime + (now-task.startTime));
+        } else {
+          timeDiv.textContent=formatTime(task.elapsedTime);
+        }
+        taskDiv.appendChild(timeDiv);
+
+        // (5) ボタン
+        const btnGroup=document.createElement('div');
+        btnGroup.className='btn-group';
+
+        const startStopBtn=document.createElement('button');
+        if(task.running){
+          startStopBtn.className='stop-btn';
+          startStopBtn.textContent='STOP';
+        } else {
+          startStopBtn.className='start-btn';
+          startStopBtn.textContent='START';
+        }
+        startStopBtn.addEventListener('click',()=>{
+          toggleTask(task.id);
+        });
+        btnGroup.appendChild(startStopBtn);
+
+        const resetBtn=document.createElement('button');
+        resetBtn.className='reset-btn';
+        resetBtn.textContent='RESET';
+        resetBtn.addEventListener('click',()=>{
+          resetTask(task.id);
+        });
+        btnGroup.appendChild(resetBtn);
+
+        const deleteBtn=document.createElement('button');
+        deleteBtn.className='delete-btn';
+        deleteBtn.textContent='削除';
+        deleteBtn.addEventListener('click',()=>{
+          deleteTask(task.id);
+        });
+        btnGroup.appendChild(deleteBtn);
+
+        taskDiv.appendChild(btnGroup);
+
+        taskList.appendChild(taskDiv);
+      });
+      catCard.appendChild(taskList);
+    }
+
+    categoriesContainer.appendChild(catCard);
+  });
+
+  updateCategorySuggestions();
+}
+
+/* === サジェスト更新 === */
+function updateCategorySuggestions(){
+  categorySuggestions.innerHTML='';
+  knownCategories.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c;
     categorySuggestions.appendChild(opt);
   });
 }
 
-/* =====================================
-  カテゴリー一覧を取得 (categoryOrder順)
-===================================== */
-function getOrderedCategories() {
-  // 現在のタスクから使用中カテゴリーを取得
-  const usedCats = [...new Set(tasks.map(t => t.category))];
-  // categoryOrder に載っているものが優先 => 既にないカテゴリーを省く => 追加された新カテゴリーを末尾に
-  // 1) 既存の categoryOrder をフィルタ => いま使われているカテゴリーだけ
-  let ordered = categoryOrder.filter(c => usedCats.includes(c));
-  // 2) まだ ordered に含まれていないカテゴリー(新規)を後ろに追加
-  usedCats.forEach(c => {
-    if (!ordered.includes(c)) {
-      ordered.push(c);
-    }
-  });
-  // これを categoryOrder に再設定（保存）
-  categoryOrder = ordered;
-  return ordered;
-}
-
-/* =====================================
-  カテゴリーを並べ替える (ドラッグ＆ドロップ)
-===================================== */
-function reorderCategories(fromIndex, toIndex) {
-  if (fromIndex === toIndex) return;
-  const c = categoryOrder.splice(fromIndex, 1)[0];
-  categoryOrder.splice(toIndex, 0, c);
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  タスクを追加
-===================================== */
-function addTask(category, name) {
-  const newCat = category || '';
-  const newName = name || '';
-
-  // 新カテゴリーなら knownCategories や collapsedCategories、categoryOrder に反映
-  if (!collapsedCategories.hasOwnProperty(newCat)) {
-    collapsedCategories[newCat] = false;
-  }
-  addKnownCategory(newCat);
-  // categoryOrderに未登録なら末尾に追加
-  if (!categoryOrder.includes(newCat)) {
-    categoryOrder.push(newCat);
-  }
-
-  // タスク作成
-  tasks.push({
-    id: Date.now(),
-    category: newCat,
-    name: newName,
-    startTime: 0,
-    elapsedTime: 0,
-    running: false
-  });
-
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  カテゴリー切替 (インライン編集)
-===================================== */
-function changeTaskCategory(task, newCategory) {
-  // 旧カテゴリーから新カテゴリーに移行
-  task.category = newCategory;
-  if (!collapsedCategories.hasOwnProperty(newCategory)) {
-    collapsedCategories[newCategory] = false;
-  }
-  addKnownCategory(newCategory);
-
-  // categoryOrder にないなら末尾に追加
-  if (!categoryOrder.includes(newCategory)) {
-    categoryOrder.push(newCategory);
-  }
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  タスク削除
-===================================== */
-function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  START/STOP
-===================================== */
-function toggleTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-
-  if (!task.running) {
-    // START
-    task.running = true;
-    task.startTime = Date.now();
-    startGlobalTimer();
-  } else {
-    // STOP
-    const now = Date.now();
-    task.elapsedTime += (now - task.startTime);
-    task.running = false;
-  }
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  RESET
-===================================== */
-function resetTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-  task.running = false;
-  task.elapsedTime = 0;
-  task.startTime = 0;
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  全STOP, 全RESET
-===================================== */
-function stopAllTasks() {
-  const now = Date.now();
-  tasks.forEach(t => {
-    if (t.running) {
-      t.elapsedTime += (now - t.startTime);
-      t.running = false;
-    }
-  });
-  renderAll();
-  saveToLocalStorage();
-}
-function resetAllTasks() {
-  tasks.forEach(t => {
-    t.running = false;
-    t.elapsedTime = 0;
-    t.startTime = 0;
-  });
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  カテゴリー折りたたみトグル
-===================================== */
-function toggleCategoryCollapse(cat) {
-  collapsedCategories[cat] = !collapsedCategories[cat];
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  カテゴリー間のタスク移動
-   -> 別のカテゴリーの行やヘッダーにドロップされたとき
-===================================== */
-function moveTaskToCategory(taskId, toCategory, toIndexInCategory = null) {
-  // タスクを取り出し
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-
-  // 旧カテゴリから外す
-  const oldCategory = task.category;
-  // 旧カテゴリ内での並び替え用リスト
-  let oldCatTasks = tasks.filter(t => t.category === oldCategory);
-
-  // そのタスクを除去
-  oldCatTasks = oldCatTasks.filter(t => t.id !== taskId);
-
-  // 新カテゴリのタスクリスト
-  let newCatTasks = tasks.filter(t => t.category === toCategory);
-  // まだ使われていないカテゴリなら
-  if (!collapsedCategories.hasOwnProperty(toCategory)) {
-    collapsedCategories[toCategory] = false;
-  }
-  addKnownCategory(toCategory);
-  if (!categoryOrder.includes(toCategory)) {
-    categoryOrder.push(toCategory);
-  }
-
-  // タスクのcategoryを更新
-  task.category = toCategory;
-
-  // newCatTasks に挿入
-  if (toIndexInCategory === null || toIndexInCategory < 0 || toIndexInCategory > newCatTasks.length) {
-    // 指定がなければ末尾
-    newCatTasks.push(task);
-  } else {
-    // 指定位置に挿入
-    newCatTasks.splice(toIndexInCategory, 0, task);
-  }
-
-  // tasks全体を再構築
-  // 1) oldCategory以外のタスク
-  let remainingTasks = tasks.filter(t => t.category !== oldCategory && t.category !== toCategory);
-
-  // 2) oldCategoryタスク (task除去済み)
-  remainingTasks.push(...oldCatTasks);
-
-  // 3) newCategoryタスク
-  remainingTasks = remainingTasks.filter(t => t.category !== toCategory);
-  remainingTasks.push(...newCatTasks);
-
-  tasks = remainingTasks;
-
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  同一カテゴリー内でタスク並べ替え
-===================================== */
-function reorderTasksInCategory(category, fromIndex, toIndex) {
-  if (fromIndex === toIndex) return;
-
-  let catTasks = tasks.filter(t => t.category === category);
-  if (fromIndex < 0 || fromIndex >= catTasks.length) return;
-  if (toIndex < 0 || toIndex >= catTasks.length) return;
-
-  const [moved] = catTasks.splice(fromIndex, 1);
-  catTasks.splice(toIndex, 0, moved);
-
-  // ほかのカテゴリーのタスク
-  let remainingTasks = tasks.filter(t => t.category !== category);
-  // categoryのタスクを再配置
-  remainingTasks.push(...catTasks);
-
-  tasks = remainingTasks;
-
-  renderAll();
-  saveToLocalStorage();
-}
-
-/* =====================================
-  時間表示 (mm:ss.mss)
-===================================== */
-function formatTime(msTotal) {
-  const ms = msTotal % 1000;
-  const sec = Math.floor(msTotal / 1000) % 60;
-  const min = Math.floor(msTotal / 60000);
-  const mm = String(min).padStart(2, '0');
-  const ss = String(sec).padStart(2, '0');
-  const mss = String(ms).padStart(3, '0');
-  return `${mm}:${ss}.${mss}`;
-}
-
-/* =====================================
-  全体描画
-===================================== */
-function renderAll() {
-  mainTable.innerHTML = '';
-
-  // カテゴリー一覧を categoryOrder の順序で並べて取得
-  const categories = getOrderedCategories();
-
-  // サジェスト更新
-  updateCategorySuggestions();
-
-  categories.forEach((cat, catIndex) => {
-    // <tbody> 1つが1つのカテゴリー
-    const tbody = document.createElement('tbody');
-    tbody.id = `cat-section-${cat}`;
-
-    // ---- カテゴリーヘッダー行 ----
-    const headerRow = document.createElement('tr');
-    headerRow.classList.add('category-header-row');
-    // カテゴリーheaderをドラッグすると並べ替え
-    headerRow.draggable = true;
-
-    // ドラッグ関連イベント
-    headerRow.addEventListener('dragstart', e => {
-      // カテゴリーヘッダー行をドラッグ
-      e.dataTransfer.setData('type', 'category'); // 種類: category
-      e.dataTransfer.setData('fromIndex', String(catIndex));
-    });
-    headerRow.addEventListener('dragover', e => {
-      e.preventDefault();
-      // ドロップ可能範囲かどうか
-      const dragType = e.dataTransfer.getData('type');
-      if (dragType === 'category') {
-        // カテゴリーをドラッグしている場合のみover
-        headerRow.classList.add('drag-over');
-      }
-    });
-    headerRow.addEventListener('dragleave', () => {
-      headerRow.classList.remove('drag-over');
-    });
-    headerRow.addEventListener('drop', e => {
-      e.preventDefault();
-      headerRow.classList.remove('drag-over');
-      const dragType = e.dataTransfer.getData('type');
-
-      if (dragType === 'category') {
-        // カテゴリー同士の並べ替え
-        const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'), 10);
-        const toIndex = catIndex;
-        reorderCategories(fromIndex, toIndex);
-      } else if (dragType === 'task') {
-        // タスクを別カテゴリーに移動
-        const taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
-        // drop先カテゴリーの末尾に追加
-        moveTaskToCategory(taskId, cat, null);
-      }
-    });
-
-    const headerTd = document.createElement('td');
-    headerTd.colSpan = 4;
-
-    // 左側: 折りたたみトグル＆カテゴリー名
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'category-info'; // デザイン上まとめるだけ
-    // 折りたたみボタン
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'category-toggle-btn';
-    toggleBtn.textContent = collapsedCategories[cat] ? '▶' : '▼';
-    toggleBtn.addEventListener('click', () => toggleCategoryCollapse(cat));
-    infoDiv.appendChild(toggleBtn);
-
-    // カテゴリータイトル
-    const catTitleSpan = document.createElement('span');
-    catTitleSpan.textContent = cat || '(未設定)';
-    infoDiv.appendChild(catTitleSpan);
-
-    headerTd.appendChild(infoDiv);
-    headerRow.appendChild(headerTd);
-    tbody.appendChild(headerRow);
-
-    // 折りたたみ中ならタスク行を描画しない
-    if (collapsedCategories[cat]) {
-      mainTable.appendChild(tbody);
-      return;
-    }
-
-    // カテゴリー内のタスク
-    const catTasks = tasks.filter(t => t.category === cat);
-
-    catTasks.forEach((task, indexInCat) => {
-      const taskRow = document.createElement('tr');
-      taskRow.classList.add('task-row');
-      taskRow.draggable = true;
-
-      // タスク行ドラッグイベント
-      taskRow.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('type', 'task');
-        e.dataTransfer.setData('taskId', String(task.id));
-        e.dataTransfer.setData('fromCategory', cat);
-        e.dataTransfer.setData('fromIndex', String(indexInCat));
-      });
-      // dragover
-      taskRow.addEventListener('dragover', e => {
-        e.preventDefault();
-        const dragType = e.dataTransfer.getData('type');
-        if (dragType === 'task') {
-          // 同じカテゴリなら並べ替え, 別カテゴリなら移動
-          taskRow.classList.add('drag-over');
-        }
-      });
-      taskRow.addEventListener('dragleave', () => {
-        taskRow.classList.remove('drag-over');
-      });
-      // drop
-      taskRow.addEventListener('drop', e => {
-        e.preventDefault();
-        taskRow.classList.remove('drag-over');
-
-        const dragType = e.dataTransfer.getData('type');
-        if (dragType === 'task') {
-          const fromCategory = e.dataTransfer.getData('fromCategory');
-          const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'), 10);
-          const draggedTaskId = parseInt(e.dataTransfer.getData('taskId'), 10);
-
-          if (fromCategory === cat) {
-            // 同じカテゴリ内の並べ替え
-            reorderTasksInCategory(cat, fromIndex, indexInCat);
-          } else {
-            // 他のカテゴリ => このカテゴリへ移動, position=indexInCat
-            moveTaskToCategory(draggedTaskId, cat, indexInCat);
-          }
-        }
-      });
-
-      // (1) カテゴリー (インライン編集)
-      const catTd = document.createElement('td');
-      const catInput = document.createElement('input');
-      catInput.type = 'text';
-      catInput.value = task.category;
-      catInput.className = 'inline-input';
-      // サジェスト
-      catInput.setAttribute('list', 'categorySuggestions');
-      catInput.addEventListener('change', () => {
-        changeTaskCategory(task, catInput.value);
-      });
-      catTd.appendChild(catInput);
-      taskRow.appendChild(catTd);
-
-      // (2) タスク名 (インライン編集)
-      const nameTd = document.createElement('td');
-      const nameInput = document.createElement('input');
-      nameInput.type = 'text';
-      nameInput.value = task.name;
-      nameInput.className = 'inline-input';
-      nameInput.addEventListener('change', () => {
-        task.name = nameInput.value;
-        saveToLocalStorage();
-      });
-      nameTd.appendChild(nameInput);
-      taskRow.appendChild(nameTd);
-
-      // (3) 経過時間
-      const timeTd = document.createElement('td');
-      timeTd.className = 'time-display';
-      if (task.running) {
-        const now = Date.now();
-        const diff = now - task.startTime;
-        timeTd.textContent = formatTime(task.elapsedTime + diff);
+/* === 60fpsで時間描画 === */
+function renderRunningState(){
+  let anyRunning=false;
+  const categories=getOrderedCategories();
+  categories.forEach(cat=>{
+    if(collapsedCategories[cat])return;
+    const catTasks= tasks.filter(t=>t.category===cat);
+    const catIndex=categoryOrder.indexOf(cat);
+    const catCard= categoriesContainer.children[catIndex];
+    if(!catCard)return;
+    const taskList=catCard.querySelector('.task-list');
+    if(!taskList)return;
+    const taskCards=taskList.querySelectorAll('.task-card');
+    taskCards.forEach((card, i)=>{
+      const task= catTasks[i];
+      if(!task) return;
+      const timeDiv= card.querySelector('.time-display');
+      const btnGroup= card.querySelector('.btn-group');
+      const startStopBtn= btnGroup.children[0];
+      if(task.running){
+        anyRunning=true;
+        const now=Date.now();
+        timeDiv.textContent=formatTime(task.elapsedTime+(now-task.startTime));
+        startStopBtn.className='stop-btn';
+        startStopBtn.textContent='STOP';
       } else {
-        timeTd.textContent = formatTime(task.elapsedTime);
-      }
-      taskRow.appendChild(timeTd);
-
-      // (4) 操作ボタン
-      const actionTd = document.createElement('td');
-      const btnGroup = document.createElement('div');
-      btnGroup.className = 'btn-group';
-
-      const startStopBtn = document.createElement('button');
-      startStopBtn.className = 'start-stop-btn';
-      startStopBtn.textContent = task.running ? 'STOP' : 'START';
-      startStopBtn.addEventListener('click', () => toggleTask(task.id));
-      btnGroup.appendChild(startStopBtn);
-
-      const resetBtn = document.createElement('button');
-      resetBtn.className = 'reset-btn';
-      resetBtn.textContent = 'RESET';
-      resetBtn.addEventListener('click', () => resetTask(task.id));
-      btnGroup.appendChild(resetBtn);
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = '削除';
-      deleteBtn.addEventListener('click', () => deleteTask(task.id));
-      btnGroup.appendChild(deleteBtn);
-
-      actionTd.appendChild(btnGroup);
-      taskRow.appendChild(actionTd);
-
-      tbody.appendChild(taskRow);
-    });
-
-    mainTable.appendChild(tbody);
-  });
-}
-
-/* =====================================
-  running中のタスクだけ部分更新
-===================================== */
-function renderRunningState() {
-  // カテゴリー順に走査
-  const categories = getOrderedCategories();
-  categories.forEach(cat => {
-    if (collapsedCategories[cat]) return; // 折りたたみ中は更新不要
-    const catTbody = document.getElementById(`cat-section-${cat}`);
-    if (!catTbody) return;
-
-    const catTasks = tasks.filter(t => t.category === cat);
-    const taskRows = catTbody.querySelectorAll('.task-row');
-    taskRows.forEach((tr, index) => {
-      const task = catTasks[index];
-      if (!task) return;
-
-      if (task.running) {
-        const now = Date.now();
-        const diff = now - task.startTime;
-        const timeTd = tr.children[2];
-        timeTd.textContent = formatTime(task.elapsedTime + diff);
+        startStopBtn.className='start-btn';
+        startStopBtn.textContent='START';
       }
     });
   });
+  if(!anyRunning){
+    clearInterval(globalTimerId);
+    globalTimerId=null;
+  }
+}
+function startGlobalTimer(){
+  if(globalTimerId)return;
+  globalTimerId=setInterval(()=>{
+    renderRunningState();
+  },16);
 }
 
-/* =====================================
-  グローバルタイマー
-===================================== */
-function startGlobalTimer() {
-  if (globalTimerId) return;
-  globalTimerId = setInterval(() => {
-    let anyRunning = false;
-    tasks.forEach(t => {
-      if (t.running) anyRunning = true;
-    });
-    if (anyRunning) {
-      renderRunningState();
-    } else {
-      clearInterval(globalTimerId);
-      globalTimerId = null;
-    }
-  }, 100);
-}
-
-/* =====================================
-  ページを閉じる時 => 全タスクSTOP
-===================================== */
-window.addEventListener('beforeunload', () => {
-  const now = Date.now();
-  tasks.forEach(t => {
-    if (t.running) {
-      t.elapsedTime += (now - t.startTime);
-      t.running = false;
+/* === ページ閉じる => STOP === */
+window.addEventListener('beforeunload',()=>{
+  const now=Date.now();
+  tasks.forEach(t=>{
+    if(t.running){
+      t.elapsedTime+=(now-t.startTime);
+      t.running=false;
     }
   });
   saveToLocalStorage();
 });
 
-/* =====================================
-  イベント設定
-===================================== */
-addTaskBtn.addEventListener('click', () => {
-  const cat = categoryInput.value.trim();
-  const name = taskNameInput.value.trim();
-  addTask(cat, name);
-  categoryInput.value = '';
-  taskNameInput.value = '';
+/* === 初期化 === */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadFromLocalStorage();
+  cleanupCategories();
+  renderAll();
+  if(tasks.some(t=>t.running)){
+    startGlobalTimer();
+  }
+});
+
+/* === イベント === */
+addTaskBtn.addEventListener('click',()=>{
+  const cat=categoryInput.value.trim();
+  const nm=taskNameInput.value.trim();
+  addTask(cat,nm);
+  categoryInput.value='';
+  taskNameInput.value='';
   categoryInput.focus();
 });
-
 stopAllBtn.addEventListener('click', stopAllTasks);
 resetAllBtn.addEventListener('click', resetAllTasks);
 
-/* =====================================
-  初期化
-===================================== */
-window.addEventListener('DOMContentLoaded', () => {
-  loadFromLocalStorage();
-  renderAll();
-  if (tasks.some(t => t.running)) {
-    startGlobalTimer();
-  }
+manualSaveBtn.addEventListener('click',()=>{
+  saveToLocalStorage();
+  alert("手動で保存しました。");
 });
-</script>
 
+</script>
 </body>
 </html>
