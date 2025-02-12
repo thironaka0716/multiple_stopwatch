@@ -1,338 +1,111 @@
-!DOCTYPE html
-html lang=ja
-head
-  meta charset=UTF-8
-  titleMulti-Task Stopwatchtitle
-  style
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stopwatch Sample</title>
+  <style>
     body {
-      font-family sans-serif;
-      margin 20px auto;
-      max-width 700px;
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
     }
-    h1 {
-      text-align center;
-    }
-    .control-panel {
-      display flex;
-      gap 1rem;
-      margin-bottom 1rem;
-      justify-content center;
+    .time-display {
+      font-size: 2rem;
+      margin-bottom: 20px;
     }
     button {
-      cursor pointer;
-      padding 6px 12px;
-      font-size 0.9rem;
+      margin: 5px;
+      font-size: 1rem;
+      padding: 10px 20px;
     }
-    table {
-      width 100%;
-      border-collapse collapse;
-      margin-bottom 1rem;
-    }
-    th, td {
-      border 1px solid #ccc;
-      padding 8px;
-      text-align center;
-    }
-    thead {
-      background-color #f8f8f8;
-    }
-    .time {
-      font-weight bold;
-      font-family 'Courier New', monospace;
-    }
-    .task-name-input {
-      width 200px;
-      padding 4px;
-    }
-  style
-head
-body
+  </style>
+</head>
+<body>
 
-h1マルチタスク ストップウォッチh1
+  <div class="time-display" id="display">00 : 00 : 000</div>
+  <button id="startStopBtn">START</button>
+  <button id="resetBtn">RESET</button>
 
-div class=control-panel
-  !-- 新しいタスクを追加するエリア --
-  input type=text id=newTaskName class=task-name-input placeholder=タスク名 
-  button id=addTaskBtn＋新規タスクbutton
+  <script>
+    let startTime = 0;       // 計測を開始した時刻(ミリ秒)
+    let elapsedTime = 0;     // 合計経過時間(ミリ秒)
+    let timerId = null;      // setIntervalのID
+    let running = false;     // ストップウォッチが動作中かどうか
 
-  !-- 並べ替えボタン --
-  button id=sortByNameBtn名前順 ▼button
-  button id=sortByTimeBtn時間順 ▼button
-div
+    const display = document.getElementById('display');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const resetBtn = document.getElementById('resetBtn');
 
-table id=taskTable
-  thead
-    tr
-      thタスク名th
-      th経過時間th
-      th操作th
-    tr
-  thead
-  tbody id=taskTbody
-    !-- タスク行をJavaScriptで追加していきます --
-  tbody
-table
-
-script
-   タスク情報を保持する配列
-   { id, name, startTime, elapsedTime, running }
-  let tasks = [];
-
-   タイマー更新用のIntervalID
-  let globalTimerId = null;
-
-   並べ替えの状態管理(昇順 true, 降順 false)
-  let sortByNameAsc = true;
-  let sortByTimeAsc = true;
-
-  const taskTbody = document.getElementById('taskTbody');
-  const addTaskBtn = document.getElementById('addTaskBtn');
-  const newTaskNameInput = document.getElementById('newTaskName');
-
-  const sortByNameBtn = document.getElementById('sortByNameBtn');
-  const sortByTimeBtn = document.getElementById('sortByTimeBtn');
-
-   -------------------------------
-   タスクを追加する
-   -------------------------------
-  function addTask(name) {
-    const newTask = {
-      id Date.now(),  一意なIDとして現在時刻を流用
-      name name  '無題タスク',
-      startTime 0,
-      elapsedTime 0,
-      running false
-    };
-    tasks.push(newTask);
-    renderTasks();
-  }
-
-   -------------------------------
-   タスクを削除する
-   -------------------------------
-  function deleteTask(id) {
-    tasks = tasks.filter(task = task.id !== id);
-    renderTasks();
-  }
-
-   -------------------------------
-   タスク表示を更新（テーブル描画）
-   -------------------------------
-  function renderTasks() {
-    taskTbody.innerHTML = '';  テーブルbodyを一旦クリア
-
-    tasks.forEach(task = {
-       行要素
-      const tr = document.createElement('tr');
-
-       タスク名セル
-      const nameTd = document.createElement('td');
-      nameTd.textContent = task.name;
-      tr.appendChild(nameTd);
-
-       時間セル
-      const timeTd = document.createElement('td');
-      timeTd.classList.add('time');
-      timeTd.textContent = formatTime(task.elapsedTime);
-      tr.appendChild(timeTd);
-
-       操作セル（STARTSTOP、RESET、削除）
-      const actionTd = document.createElement('td');
-
-      const startStopBtn = document.createElement('button');
-      startStopBtn.textContent = task.running  'STOP'  'START';
-      startStopBtn.addEventListener('click', () = {
-        toggleTask(task.id);
-      });
-      actionTd.appendChild(startStopBtn);
-
-      const resetBtn = document.createElement('button');
-      resetBtn.textContent = 'RESET';
-      resetBtn.style.marginLeft = '6px';
-      resetBtn.addEventListener('click', () = {
-        resetTask(task.id);
-      });
-      actionTd.appendChild(resetBtn);
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = '削除';
-      delBtn.style.marginLeft = '6px';
-      delBtn.addEventListener('click', () = {
-        deleteTask(task.id);
-      });
-      actionTd.appendChild(delBtn);
-
-      tr.appendChild(actionTd);
-
-      taskTbody.appendChild(tr);
-    });
-  }
-
-   -------------------------------
-   時刻を mmssms 形式で表示用にフォーマット
-   -------------------------------
-  function formatTime(millis) {
-    const ms = millis % 1000;
-    const s = Math.floor(millis  1000) % 60;
-    const m = Math.floor(millis  (1000  60));
-    const mm = String(m).padStart(2, '0');
-    const ss = String(s).padStart(2, '0');
-    const mss = String(ms).padStart(3, '0');
-    return `${mm}${ss}.${mss}`;
-  }
-
-   -------------------------------
-   STARTSTOPトグル
-   -------------------------------
-  function toggleTask(id) {
-    const task = tasks.find(t = t.id === id);
-    if (!task) return;
-
-    if (!task.running) {
-       start
-      task.running = true;
-      task.startTime = Date.now();
-       グローバルタイマーが動いてないなら起動
-      startGlobalTimer();
-    } else {
-       stop
-      task.running = false;
-       経過時間を更新
+    // 時刻表示を更新する関数
+    function updateTime() {
+      // 現在時刻との差分(ミリ秒)
       const now = Date.now();
-      task.elapsedTime += (now - task.startTime);
+      const diff = now - startTime;
+      // 現在の合計経過時間（以前のelapsedTimeに差分を加える）
+      const total = elapsedTime + diff;
+
+      // ミリ秒 => 分, 秒, ミリ秒に分解
+      const ms = total % 1000;               // ミリ秒
+      const s = Math.floor(total / 1000) % 60; // 秒
+      const m = Math.floor(total / 60000);     // 分
+
+      // 2桁, 3桁表示用に文字列をフォーマット
+      const formattedM = String(m).padStart(2, '0');
+      const formattedS = String(s).padStart(2, '0');
+      const formattedMs = String(ms).padStart(3, '0');
+
+      // HTMLに反映
+      display.textContent = `${formattedM} : ${formattedS} : ${formattedMs}`;
     }
-    renderTasks();
-  }
 
-   -------------------------------
-   タスクをリセット
-   -------------------------------
-  function resetTask(id) {
-    const task = tasks.find(t = t.id === id);
-    if (!task) return;
+    // ストップウォッチをスタートまたはストップする処理
+    function startStop() {
+      if (!running) {
+        // 停止中の場合はスタートする
+        running = true;
+        startStopBtn.textContent = 'STOP';
 
-    task.elapsedTime = 0;
-    task.startTime = 0;
-    task.running = false;
-    renderTasks();
-  }
+        // 現在時刻からスタートする
+        startTime = Date.now();
+        // 一定間隔で時間表示を更新
+        timerId = setInterval(updateTime, 10);
 
-   -------------------------------
-   全タスクの時間を更新するタイマーを開始
-   -------------------------------
-  function startGlobalTimer() {
-    if (globalTimerId) return;  既に動いていれば何もしない
-
-    globalTimerId = setInterval(() = {
-       動作中(running=true)のタスクの時間を更新
-      let anyRunning = false;
-      const now = Date.now();
-
-      tasks.forEach(task = {
-        if (task.running) {
-          anyRunning = true;
-          const diff = now - task.startTime;
-           表示には即座に反映させたいので、ここでは計算せずに別でrenderでも可
-           ただし毎回renderすると負荷がかかるのでここでは計算のみ
-          task.elapsedTimeTemp = task.elapsedTime + diff;
-        } else {
-           走っていないタスクはelapsedTimeTempに確定値を入れておく
-          task.elapsedTimeTemp = task.elapsedTime;
-        }
-      });
-
-       もし1つ以上タスクが動いていれば再描画
-       runningなタスクの今現在の表示を反映させたい
-      if (anyRunning) {
-         一時計算した値を表示のために上書き
-        tasks.forEach(task = {
-          if (typeof task.elapsedTimeTemp === 'number') {
-             画面表示用に一時的に変数作るか、taskに上書きしてもOK
-          }
-        });
-        renderRunningState();
       } else {
-         誰も走っていなければタイマー終了
-        clearInterval(globalTimerId);
-        globalTimerId = null;
-      }
-    }, 50);
-  }
+        // 動作中の場合はストップする
+        running = false;
+        startStopBtn.textContent = 'START';
 
-   -------------------------------
-   run中のタスクを再描画だけする関数
-   (パフォーマンスのために全タスク一括描画を少し変形)
-   -------------------------------
-  function renderRunningState() {
-     テーブル行を順に参照して、対応するtaskのelapsedTimeTempを表示
-    const rows = taskTbody.querySelectorAll('tr');
-    rows.forEach((tr, index) = {
-      const task = tasks[index];
-      if (task.running) {
-        const timeTd = tr.children[1];
+        // タイマーを止めて、経過時間を更新
+        clearInterval(timerId);
+        timerId = null;
+
+        // 最後にupdateTimeを呼んで最新状態にしてからelapsedTimeを上書き
+        updateTime();
+        // stopした時点での経過時間 totalを算出
         const now = Date.now();
-        const diff = now - task.startTime;
-        const current = task.elapsedTime + diff;
-        timeTd.textContent = formatTime(current);
-      } else {
-         走ってなければそのまま（ただしSTOPしたばかりの場合は既にrenderTasks()で更新されている）
+        elapsedTime += (now - startTime);
       }
-    });
-  }
-
-   -------------------------------
-   並べ替え
-   -------------------------------
-   名前順
-  function sortByName() {
-     sortByNameAscがtrueなら昇順、falseなら降順
-    if (sortByNameAsc) {
-      tasks.sort((a, b) = a.name.localeCompare(b.name));
-    } else {
-      tasks.sort((a, b) = b.name.localeCompare(a.name));
     }
-    sortByNameAsc = !sortByNameAsc;  次にクリックした時に反転
-    renderTasks();
-     ボタンラベル（▼ or ▲）を変更
-    sortByNameBtn.textContent = sortByNameAsc  '名前順 ▼'  '名前順 ▲';
-  }
 
-   時間順
-  function sortByTime() {
-     sortByTimeAscがtrueなら経過時間が短い順、falseなら長い順
-    if (sortByTimeAsc) {
-      tasks.sort((a, b) = a.elapsedTime - b.elapsedTime);
-    } else {
-      tasks.sort((a, b) = b.elapsedTime - a.elapsedTime);
+    // リセット処理
+    function reset() {
+      // タイマーを止める
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      running = false;
+      startStopBtn.textContent = 'START';
+
+      // 経過時間を0にして表示をリセット
+      startTime = 0;
+      elapsedTime = 0;
+      display.textContent = '00 : 00 : 000';
     }
-    sortByTimeAsc = !sortByTimeAsc;
-    renderTasks();
-     ボタンラベル（▼ or ▲）を変更
-    sortByTimeBtn.textContent = sortByTimeAsc  '時間順 ▼'  '時間順 ▲';
-  }
 
-   -------------------------------
-   イベント設定
-   -------------------------------
-  addTaskBtn.addEventListener('click', () = {
-    const taskName = newTaskNameInput.value.trim();
-    if (taskName !== '') {
-      addTask(taskName);
-    } else {
-      addTask('無題タスク');
-    }
-    newTaskNameInput.value = '';
-    newTaskNameInput.focus();
-  });
-
-  sortByNameBtn.addEventListener('click', sortByName);
-  sortByTimeBtn.addEventListener('click', sortByTime);
-
-   -------------------------------
-   初期表示
-   -------------------------------
-  renderTasks();
-
-script
-body
-html
+    // ボタンのイベント設定
+    startStopBtn.addEventListener('click', startStop);
+    resetBtn.addEventListener('click', reset);
+  </script>
+</body>
+</html>
