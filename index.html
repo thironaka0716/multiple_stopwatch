@@ -2,60 +2,50 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>マルチタスクストップウォッチ (Category Rename & Sum)</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-
+  <title>マルチタスクストップウォッチ (Snapshot機能付)</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    /* ==== ベースCSS ==== */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    /* ==== ベースリセット ==== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
       background: #f9f9f9;
       color: #333;
-      padding: 30px;
+      padding: 20px;
       min-height: 100vh;
+      position: relative;
     }
     h1 {
       text-align: center;
       margin-bottom: 20px;
       font-weight: 600;
-      color: #444;
     }
-
     .container {
       max-width: 1000px;
       margin: 0 auto;
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 20px 20px 30px;
       position: relative;
     }
-
-    /* 手動で保存ボタン (画面右上端固定) */
+    /* 手動保存ボタン (右上端固定) */
     .manual-save-btn {
       position: fixed;
       top: 10px;
       right: 10px;
-      padding: 0.5rem 1rem;
       background: #666;
       color: #fff;
       border: none;
       border-radius: 6px;
+      padding: 0.5rem 1rem;
       cursor: pointer;
       font-size: 0.9rem;
       z-index: 9999;
     }
-    .manual-save-btn:hover {
-      background: #555;
-    }
-
-    /* コントロールパネル */
+    .manual-save-btn:hover { background: #555; }
+    /* タスク管理パネル */
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -63,65 +53,47 @@
       justify-content: center;
       margin-bottom: 20px;
     }
-    .controls input {
-      padding: 0.6rem 0.8rem;
+    .controls input, .controls button, .controls select {
+      padding: 0.5rem 0.8rem;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 0.9rem;
       outline: none;
       transition: border-color 0.2s;
     }
-    .controls input:focus {
-      border-color: #66aaff;
-    }
+    .controls input:focus, .controls select:focus { border-color: #66aaff; }
     .controls button {
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: 6px;
       background: #66aaff;
       color: #fff;
+      border: none;
       cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.2s;
     }
-    .controls button:hover {
-      background: #5595dd;
-    }
-
-    /* カテゴリーを縦に並べる */
-    #categories-container {
+    .controls button:hover { background: #5595dd; }
+    /* カテゴリエリア */
+    #categoriesContainer {
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
-
-    /* カテゴリーカード */
     .category-card {
       background: #eee;
-      border-radius: 8px;
       padding: 10px;
-      user-select: none;
+      border-radius: 8px;
       position: relative;
+      user-select: none;
     }
-    .category-card.drag-over {
-      outline: 2px dashed #66aaff;
-    }
-
-    /* カテゴリーヘッダー */
+    .category-card.drag-over { outline: 2px dashed #66aaff; }
     .category-header {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
       gap: 10px;
-      cursor: move; /* ドラッグ対象 */
-    }
-    .cat-handle {
-      width: 20px;
-      text-align: center;
-      font-size: 1rem;
-      flex-shrink: 0;
       cursor: move;
+      background: #ddd;
+      padding: 6px;
+      border-radius: 6px;
     }
+    .cat-handle { width: 20px; text-align: center; cursor: move; }
     .cat-info {
       display: flex;
       align-items: center;
@@ -130,56 +102,50 @@
       min-width: 0;
       overflow: hidden;
     }
-
-    /* ダブルクリックで編集可能にする cat-name */
-    .cat-name {
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer; /* ダブルクリック誘導 */
-    }
-    .cat-name-edit {
-      padding: 2px 4px;
-      border: 1px solid #999;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      min-width: 60px;
-      flex: 1; /* 幅を確保 */
-    }
-
-    /* 折りたたみボタン */
     .cat-toggle-btn {
       background: transparent;
       border: none;
       font-size: 1.2rem;
       cursor: pointer;
     }
-
-    /* カラー＆追加ボタン */
+    .cat-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer; /* ダブルクリックで編集 */
+    }
+    .cat-name-edit {
+      padding: 2px 4px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .cat-sum-time {
+      margin-left: 10px;
+      font-size: 0.85rem;
+      font-family: monospace;
+      font-weight: 600;
+      color: #333;
+    }
     .cat-right {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-shrink: 0;
     }
     .cat-add-btn {
       background: #5cb85c;
+      color: #fff;
       border: none;
       border-radius: 6px;
-      padding: 0.3rem 0.8rem;
-      color: #fff;
+      padding: 0.4rem 0.8rem;
       font-size: 0.8rem;
       cursor: pointer;
     }
-    .cat-add-btn:hover {
-      background: #4cae4c;
-    }
-
+    .cat-add-btn:hover { background: #4cae4c; }
     /* カラーパレット */
-    .color-palette {
-      position: relative;
-    }
+    .color-palette { position: relative; }
     .color-palette-btn {
       background: #ddd;
       border: none;
@@ -188,9 +154,7 @@
       font-size: 0.8rem;
       cursor: pointer;
     }
-    .color-palette-btn:hover {
-      background: #ccc;
-    }
+    .color-palette-btn:hover { background: #ccc; }
     .color-preview {
       width: 20px;
       height: 20px;
@@ -207,9 +171,9 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       padding: 8px;
-      z-index: 1000;
+      z-index: 999;
       width: 140px;
     }
     .color-palette.open .color-palette-popup {
@@ -221,36 +185,21 @@
       width: 24px;
       height: 24px;
       border-radius: 4px;
-      cursor: pointer;
       border: 2px solid #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      cursor: pointer;
     }
-    .color-swatch:hover {
-      border-color: #666;
-    }
-
-    /* 合計時間表示 */
-    .cat-sum-time {
-      margin-left: 10px;
-      font-size: 0.85rem;
-      color: #333;
-      font-family: monospace;
-      font-weight: 600;
-    }
-
-    /* タスク一覧 (横並び, wrap) */
+    .color-swatch:hover { border-color: #666; }
+    /* タスクリスト */
     .task-list {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
-
-    /* タスクカード */
     .task-card {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      user-select: none;
       display: flex;
       flex-flow: row nowrap;
       gap: 6px;
@@ -259,16 +208,8 @@
       cursor: move;
       width: 100%;
     }
-    .task-card.drag-over {
-      outline: 2px dashed #66aaff;
-    }
-
-    @media (max-width: 900px) {
-      .task-card {
-        flex-flow: row wrap;
-      }
-    }
-
+    .task-card.drag-over { outline: 2px dashed #66aaff; }
+    @media (max-width: 900px) { .task-card { flex-flow: row wrap; } }
     .task-handle {
       width: 20px;
       text-align: center;
@@ -276,24 +217,16 @@
       flex-shrink: 0;
       cursor: move;
     }
-
-    /* カテゴリ欄削除 => catInput無用 */
-
     .task-name {
-      flex: 2 1 200px;
-      min-width: 120px;
+      flex: 2 1 auto;
+      min-width: 150px;
       padding: 6px;
       border: 1px solid transparent;
       border-radius: 4px;
       background: #fcfcfc;
       font-size: 0.9rem;
     }
-    .task-name:focus {
-      border-color: #66aaff;
-      background: #fff;
-      outline: none;
-    }
-
+    .task-name:focus { outline: none; border-color: #66aaff; background: #fff; }
     .time-display {
       flex: 0 1 auto;
       min-width: 60px;
@@ -302,7 +235,6 @@
       font-size: 0.9rem;
       text-align: center;
     }
-
     .btn-group {
       display: flex;
       gap: 4px;
@@ -316,96 +248,127 @@
       cursor: pointer;
       color: #fff;
     }
-    .start-btn {
-      background: #66aaff;
-    }
-    .start-btn:hover {
-      background: #5595dd;
-    }
-    .stop-btn {
-      background: #d9534f;
-    }
-    .stop-btn:hover {
-      background: #c9302c;
-    }
-    .reset-btn {
-      background: #f0ad4e;
-    }
-    .reset-btn:hover {
-      background: #d99640;
-    }
-    .delete-btn {
-      background: #d9534f;
-    }
-    .delete-btn:hover {
-      background: #c9302c;
-    }
+    .start-btn { background: #66aaff; }
+    .start-btn:hover { background: #5595dd; }
+    .stop-btn { background: #d9534f; }
+    .stop-btn:hover { background: #c9302c; }
+    .reset-btn { background: #f0ad4e; }
+    .reset-btn:hover { background: #d99640; }
+    .delete-btn { background: #d9534f; }
+    .delete-btn:hover { background: #c9302c; }
 
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      h1 {
-        margin-bottom: 10px;
-        font-size: 1.2rem;
-      }
-      .container {
-        padding: 10px;
-      }
-      .controls input, .controls button {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.8rem;
-      }
-      .cat-handle, .task-handle {
-        width: 16px;
-        font-size: 0.9rem;
-      }
-      .task-name {
-        min-width: 80px;
-        font-size: 0.8rem;
-      }
-      .time-display {
-        font-size: 0.8rem;
-        min-width: 50px;
-      }
-      .btn-group button {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.4rem;
-      }
+    /* スナップショットパネル (下部エリア) */
+    .snapshot-panel {
+      margin-top: 40px;
+      padding: 20px;
+      background: #fafafa;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
+    .snapshot-panel h2 { margin-bottom: 10px; }
+    .snapshot-panel .snapshot-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .snapshot-panel .snapshot-controls input, 
+    .snapshot-panel .snapshot-controls button {
+      padding: 0.5rem 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .snapshot-panel .snapshot-controls button {
+      background: #66aaff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .snapshot-panel .snapshot-controls button:hover { background: #5595dd; }
+    .snapshot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .snapshot-group h3 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+    .snapshot-group button {
+      background: #ddd;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .snapshot-group button:hover { background: #ccc; }
   </style>
 </head>
 <body>
 
-<h1>マルチタスクストップウォッチ</h1>
-
+<h1>マルチタスクストップウォッチ (Snapshot機能付)</h1>
 <button id="manualSaveBtn" class="manual-save-btn">手動で保存</button>
 
-<div class="container">
+<div class="container" id="taskContainer">
+  <!-- タスク管理パネル -->
   <div class="controls">
-    <input type="text" id="categoryInput" list="categorySuggestions" placeholder="カテゴリー" />
-    <datalist id="categorySuggestions"></datalist>
-
+    <input type="text" id="categoryInput" placeholder="カテゴリー" />
     <input type="text" id="taskNameInput" placeholder="タスク名" />
     <button id="addTaskBtn">＋タスク追加</button>
-
     <button id="stopAllBtn">STOP ALL</button>
     <button id="resetAllBtn">RESET ALL</button>
+    <button id="exportCsvBtn">CSVエクスポート</button>
   </div>
+  <datalist id="categorySuggestions"></datalist>
+  <div id="categoriesContainer"></div>
+</div>
 
-  <div id="categories-container"></div>
+<!-- スナップショットパネル (下部エリア) -->
+<div class="snapshot-panel">
+  <h2>スナップショット管理</h2>
+  <div class="snapshot-controls">
+    <input type="date" id="snapshotDateInput">
+    <button id="takeSnapshotBtn">この日付でスナップショット取得</button>
+  </div>
+  <div id="snapshotList" class="snapshot-list"></div>
 </div>
 
 <script>
-/* === データ構造 === */
-let tasks = [];
-let collapsedCategories = {};
-let knownCategories = [];
-let categoryOrder = [];
-let categoryColors = {};
+/*
+  【データ構造】
+  mainData:
+    tasks, collapsedCategories, knownCategories, categoryOrder, categoryColors: 連続状態で管理（スナップショットとは別）
+    snapshots: 配列。各スナップショットは { id, label, createdAt, snapshotDate, data }
+      - snapshotDate: ユーザーがスナップショット取得時に指定した日付 (YYYY-MM-DD)
+      - data: { tasks, collapsedCategories, knownCategories, categoryOrder, categoryColors }
+*/
 
-const STORAGE_KEY = 'multiTaskStopwatchData_renameAndSum';
+const STORAGE_KEY = "singleStopwatchPlusSnapshots_v2";
+let mainData = {
+  tasks: [],
+  collapsedCategories: {},
+  knownCategories: [],
+  categoryOrder: [],
+  categoryColors: {},
+  snapshots: []
+};
 
+let tasks = mainData.tasks;
+let collapsedCategories = mainData.collapsedCategories;
+let knownCategories = mainData.knownCategories;
+let categoryOrder = mainData.categoryOrder;
+let categoryColors = mainData.categoryColors;
+let snapshots = mainData.snapshots;
+
+// loadedSnapshotDate は、CSVエクスポート時に使用
+let loadedSnapshotDate = "";
+
+/* ================================
+   PRESET COLORS
+================================ */
 const PRESET_COLORS = [
   "#F94144","#F3722C","#F8961E","#F9844A","#F9C74F",
   "#90BE6D","#43AA8B","#4D908E","#577590","#277DA1",
@@ -413,132 +376,122 @@ const PRESET_COLORS = [
   "#FFDAC1","#B5EAD7","#C7CEEA","#FF9CEE","#F6B7C6"
 ];
 
-// DOM
-const manualSaveBtn = document.getElementById('manualSaveBtn');
-const categoryInput = document.getElementById('categoryInput');
-const taskNameInput = document.getElementById('taskNameInput');
-const addTaskBtn = document.getElementById('addTaskBtn');
-const stopAllBtn = document.getElementById('stopAllBtn');
-const resetAllBtn = document.getElementById('resetAllBtn');
-const categoriesContainer = document.getElementById('categories-container');
+/* ================================
+   DOM要素取得
+================================ */
+const manualSaveBtn       = document.getElementById('manualSaveBtn');
+const categoryInput       = document.getElementById('categoryInput');
+const taskNameInput       = document.getElementById('taskNameInput');
+const addTaskBtn          = document.getElementById('addTaskBtn');
+const stopAllBtn          = document.getElementById('stopAllBtn');
+const resetAllBtn         = document.getElementById('resetAllBtn');
+const exportCsvBtn        = document.getElementById('exportCsvBtn');
+const categoriesContainer = document.getElementById('categoriesContainer');
 const categorySuggestions = document.getElementById('categorySuggestions');
+
+const snapshotDateInput   = document.getElementById('snapshotDateInput');
+const takeSnapshotBtn     = document.getElementById('takeSnapshotBtn');
+const snapshotListDiv     = document.getElementById('snapshotList');
 
 let globalTimerId = null;
 
-/* === localStorage === */
-function saveToLocalStorage(){
-  try {
-    const data = {
-      tasks, collapsedCategories, knownCategories,
-      categoryOrder, categoryColors
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log("Saved to localStorage.");
-  } catch(e){
-    console.warn("Saving localStorage failed:", e);
-  }
-}
-
+/* ================================
+   localStorage 関連
+================================ */
 function loadFromLocalStorage(){
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if(!saved)return;
-    const parsed = JSON.parse(saved);
-    if(parsed.tasks) tasks=parsed.tasks;
-    if(parsed.collapsedCategories) collapsedCategories=parsed.collapsedCategories;
-    if(parsed.knownCategories) knownCategories=parsed.knownCategories;
-    if(parsed.categoryOrder) categoryOrder=parsed.categoryOrder;
-    if(parsed.categoryColors) categoryColors=parsed.categoryColors;
+    if(saved){
+      mainData = JSON.parse(saved);
+      tasks = mainData.tasks;
+      collapsedCategories = mainData.collapsedCategories;
+      knownCategories = mainData.knownCategories;
+      categoryOrder = mainData.categoryOrder;
+      categoryColors = mainData.categoryColors;
+      snapshots = mainData.snapshots;
+    }
   } catch(e){
-    console.warn("Loading localStorage failed:", e);
+    console.warn("localStorage読み込み失敗:", e);
+  }
+}
+function saveToLocalStorage(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mainData));
+    console.log("mainDataをlocalStorageに保存しました");
+  } catch(e){
+    console.warn("localStorage保存失敗:", e);
   }
 }
 
-/* === カテゴリ管理 === */
+/* ================================
+   カテゴリ管理
+================================ */
 function addKnownCategory(cat){
   if(cat && !knownCategories.includes(cat)){
     knownCategories.push(cat);
   }
 }
 function getOrderedCategories(){
-  const usedCats=[...new Set(tasks.map(t=>t.category))];
-  let ordered= categoryOrder.filter(c=>usedCats.includes(c));
-  usedCats.forEach(c=>{
+  const usedCats = [...new Set(tasks.map(t => t.category))];
+  let ordered = categoryOrder.filter(c => usedCats.includes(c));
+  usedCats.forEach(c => {
     if(!ordered.includes(c)){
       ordered.push(c);
     }
   });
-  categoryOrder=ordered;
+  categoryOrder = ordered;
   return ordered;
 }
-
-/** カテゴリ名をリネーム */
 function renameCategory(oldName, newName){
   if(!oldName || !newName) return;
-  if(oldName===newName) return;
-
-  // tasks 内の category を一括置換
+  if(oldName === newName) return;
   tasks.forEach(t=>{
-    if(t.category===oldName){
-      t.category=newName;
+    if(t.category === oldName){
+      t.category = newName;
     }
   });
-
-  // knownCategories
   if(knownCategories.includes(oldName)){
-    knownCategories= knownCategories.filter(c=> c!==oldName);
+    knownCategories = knownCategories.filter(c => c !== oldName);
     knownCategories.push(newName);
   }
-
-  // categoryOrder
-  const idx= categoryOrder.indexOf(oldName);
-  if(idx>=0){
-    categoryOrder[idx]=newName;
-  }
-
-  // categoryColors
+  const idx = categoryOrder.indexOf(oldName);
+  if(idx >= 0){ categoryOrder[idx] = newName; }
   if(categoryColors[oldName]){
-    categoryColors[newName]= categoryColors[oldName];
+    categoryColors[newName] = categoryColors[oldName];
     delete categoryColors[oldName];
   }
-
-  // collapsedCategories
   if(collapsedCategories.hasOwnProperty(oldName)){
-    collapsedCategories[newName]= collapsedCategories[oldName];
+    collapsedCategories[newName] = collapsedCategories[oldName];
     delete collapsedCategories[oldName];
   }
-
   cleanupCategories();
   renderAll();
   saveToLocalStorage();
 }
-
 function reorderCategories(fromIndex, toIndex){
-  if(fromIndex===toIndex)return;
-  const moved= categoryOrder.splice(fromIndex,1)[0];
-  categoryOrder.splice(toIndex,0,moved);
+  if(fromIndex === toIndex)return;
+  const moved = categoryOrder.splice(fromIndex, 1)[0];
+  categoryOrder.splice(toIndex, 0, moved);
   renderAll();
   saveToLocalStorage();
 }
 function toggleCategoryCollapse(cat){
-  collapsedCategories[cat]=!collapsedCategories[cat];
+  collapsedCategories[cat] = !collapsedCategories[cat];
   renderAll();
   saveToLocalStorage();
 }
 function getCategoryColor(cat){
-  return categoryColors[cat]||'#e0e0e0';
+  return categoryColors[cat] || "#e0e0e0";
 }
 function setCategoryColor(cat, colVal){
-  categoryColors[cat]=colVal;
-  saveToLocalStorage();
+  categoryColors[cat] = colVal;
   renderAll();
+  saveToLocalStorage();
 }
-
-/* === カテゴリ掃除 & 自動色 === */
 function cleanupCategories(){
-  const usedCats= new Set(tasks.map(t=>t.category));
-  knownCategories= knownCategories.filter(c=> usedCats.has(c)&& c!=='');
-  categoryOrder= categoryOrder.filter(c=> usedCats.has(c));
+  const usedCats = new Set(tasks.map(t=> t.category));
+  knownCategories = knownCategories.filter(c => usedCats.has(c) && c !== '');
+  categoryOrder = categoryOrder.filter(c => usedCats.has(c));
   for(const c in categoryColors){
     if(!usedCats.has(c)){
       delete categoryColors[c];
@@ -550,389 +503,350 @@ function cleanupCategories(){
     }
   }
   for(const c of usedCats){
-    if(c!=='' && !categoryColors[c]){
+    if(c !== '' && !categoryColors[c]){
       autoAssignColor(c);
     }
   }
 }
 function autoAssignColor(cat){
-  if(categoryColors[cat])return;
-  const used=new Set(Object.values(categoryColors));
+  if(categoryColors[cat]) return;
+  const used = new Set(Object.values(categoryColors));
   for(const col of PRESET_COLORS){
     if(!used.has(col)){
-      categoryColors[cat]=col;
+      categoryColors[cat] = col;
       return;
     }
   }
-  categoryColors[cat]=PRESET_COLORS[0]||'#e0e0e0';
+  categoryColors[cat] = PRESET_COLORS[0] || "#e0e0e0";
 }
 
-/* === タスク操作 === */
-function addTask(cat,name){
-  const c=cat||'';
-  const nm=name||'';
+/* ================================
+   タスク操作
+================================ */
+function addTask(cat, name){
+  const c = cat || '';
+  const nm = name || '';
   if(!collapsedCategories.hasOwnProperty(c)){
-    collapsedCategories[c]=false;
+    collapsedCategories[c] = false;
   }
   addKnownCategory(c);
   if(!categoryOrder.includes(c)){
     categoryOrder.push(c);
   }
   tasks.push({
-    id:Date.now(),
-    category:c,
-    name:nm,
-    startTime:0,
-    elapsedTime:0,
-    running:false
+    id: Date.now(),
+    category: c,
+    name: nm,
+    startTime: 0,
+    elapsedTime: 0,
+    running: false
   });
   cleanupCategories();
   renderAll();
   saveToLocalStorage();
 }
 function deleteTask(id){
-  tasks=tasks.filter(t=>t.id!==id);
+  tasks = tasks.filter(t => t.id !== id);
   cleanupCategories();
   renderAll();
   saveToLocalStorage();
 }
 function toggleTask(id){
-  const task= tasks.find(t=>t.id===id);
+  const task = tasks.find(t => t.id === id);
   if(!task)return;
   if(!task.running){
-    // START
-    task.running=true;
-    task.startTime=Date.now();
+    task.running = true;
+    task.startTime = Date.now();
     startGlobalTimer();
   } else {
-    // STOP
-    const now=Date.now();
-    task.elapsedTime+=(now-task.startTime);
-    task.running=false;
+    const now = Date.now();
+    task.elapsedTime += (now - task.startTime);
+    task.running = false;
   }
   renderAll();
   saveToLocalStorage();
 }
 function resetTask(id){
-  const task= tasks.find(t=>t.id===id);
+  const task = tasks.find(t => t.id === id);
   if(!task)return;
-  task.running=false;
-  task.elapsedTime=0;
-  task.startTime=0;
+  task.running = false;
+  task.elapsedTime = 0;
+  task.startTime = 0;
   renderAll();
   saveToLocalStorage();
 }
-
-/* === タスク並べ替え === */
 function reorderTasksInCategory(cat, fromIndex, toIndex){
-  if(fromIndex===toIndex)return;
-  let catTasks= tasks.filter(t=>t.category===cat);
-  if(fromIndex<0||fromIndex>=catTasks.length)return;
-  if(toIndex<0||toIndex>catTasks.length)return;
-  const [moved]= catTasks.splice(fromIndex,1);
-  catTasks.splice(toIndex,0,moved);
-  let rest= tasks.filter(t=>t.category!==cat);
-  rest.push(...catTasks);
-  tasks=rest;
+  if(fromIndex === toIndex)return;
+  let catTasks = tasks.filter(t => t.category === cat);
+  if(fromIndex < 0 || fromIndex >= catTasks.length) return;
+  if(toIndex < 0 || toIndex > catTasks.length) return;
+  const [moved] = catTasks.splice(fromIndex, 1);
+  catTasks.splice(toIndex, 0, moved);
+  const others = tasks.filter(t => t.category !== cat);
+  tasks = [...others, ...catTasks];
   renderAll();
   saveToLocalStorage();
 }
 function moveTaskToCategory(taskId, newCat, newIndex=null){
-  const task= tasks.find(t=>t.id===taskId);
+  const task = tasks.find(t => t.id === taskId);
   if(!task)return;
-  const oldCat=task.category;
-  let oldCatTasks= tasks.filter(t=>t.category===oldCat && t.id!==taskId);
-  let newCatTasks= tasks.filter(t=>t.category===newCat);
-
-  task.category=newCat;
+  const oldCat = task.category;
+  let oldCatTasks = tasks.filter(t => t.category === oldCat && t.id !== taskId);
+  let newCatTasks = tasks.filter(t => t.category === newCat);
+  task.category = newCat;
   if(!collapsedCategories.hasOwnProperty(newCat)){
-    collapsedCategories[newCat]=false;
+    collapsedCategories[newCat] = false;
   }
   addKnownCategory(newCat);
   if(!categoryOrder.includes(newCat)){
     categoryOrder.push(newCat);
   }
-
-  if(newIndex===null||newIndex<0||newIndex>newCatTasks.length){
+  if(newIndex === null || newIndex < 0 || newIndex > newCatTasks.length){
     newCatTasks.push(task);
   } else {
-    newCatTasks.splice(newIndex,0,task);
+    newCatTasks.splice(newIndex, 0, task);
   }
-  let rest= tasks.filter(t=> t.category!==oldCat && t.category!==newCat);
-  rest.push(...oldCatTasks);
-  rest= rest.filter(t=> t.category!==newCat);
-  rest.push(...newCatTasks);
-
-  tasks=rest;
+  let others = tasks.filter(t => t.category !== oldCat && t.category !== newCat);
+  others = [...others, ...oldCatTasks];
+  others = others.filter(t => t.category !== newCat);
+  tasks = [...others, ...newCatTasks];
   cleanupCategories();
   renderAll();
   saveToLocalStorage();
 }
 
-/* === 時間表示 === */
+/* ================================
+   時間表示
+================================ */
 function formatTime(msTotal){
-  const ms= msTotal%1000;
-  const sec=Math.floor(msTotal/1000)%60;
-  const min=Math.floor(msTotal/60000);
-  const mm= String(min).padStart(2,'0');
-  const ss= String(sec).padStart(2,'0');
-  const mss=String(ms).padStart(3,'0');
+  const ms = msTotal % 1000;
+  const sec = Math.floor(msTotal / 1000) % 60;
+  const min = Math.floor(msTotal / 60000);
+  const mm = String(min).padStart(2, "0");
+  const ss = String(sec).padStart(2, "0");
+  const mss = String(ms).padStart(3, "0");
   return `${mm}:${ss}.${mss}`;
 }
-
-/** 指定カテゴリの「合計時間（動作中のものを含む）」をミリ秒で返す */
 function getCategoryTotalTime(cat){
-  let sum=0;
-  const now=Date.now();
-  tasks.forEach(t=>{
-    if(t.category===cat){
-      let base=t.elapsedTime;
+  let sum = 0;
+  const now = Date.now();
+  tasks.forEach(t => {
+    if(t.category === cat){
+      let base = t.elapsedTime;
       if(t.running){
-        base+=(now - t.startTime);
+        base += (now - t.startTime);
       }
-      sum+=base;
+      sum += base;
     }
   });
   return sum;
 }
 
-/* === 全STOP / 全RESET === */
+/* ================================
+   全STOP / RESET ALL
+================================ */
 function stopAllTasks(){
-  const now=Date.now();
-  tasks.forEach(t=>{
+  const now = Date.now();
+  tasks.forEach(t => {
     if(t.running){
-      t.elapsedTime+=(now-t.startTime);
-      t.running=false;
+      t.elapsedTime += (now - t.startTime);
+      t.running = false;
     }
   });
   renderAll();
   saveToLocalStorage();
 }
 function resetAllTasks(){
-  tasks.forEach(t=>{
-    t.running=false;
-    t.elapsedTime=0;
-    t.startTime=0;
+  tasks.forEach(t => {
+    t.running = false;
+    t.elapsedTime = 0;
+    t.startTime = 0;
   });
   renderAll();
   saveToLocalStorage();
 }
 
-/* === 画面描画 === */
+/* ================================
+   メイン描画 (タスク状態)
+================================ */
 function renderAll(){
-  categoriesContainer.innerHTML='';
-
+  categoriesContainer.innerHTML = "";
   cleanupCategories();
-  const categories= getOrderedCategories();
-
-  categories.forEach((cat, catIndex)=>{
-    const catCard=document.createElement('div');
-    catCard.className='category-card';
-    catCard.draggable=true;
-
-    // カテゴリドラッグ
-    catCard.addEventListener('dragstart', e=>{
+  const categories = getOrderedCategories();
+  categories.forEach((cat, catIndex) => {
+    const catCard = document.createElement('div');
+    catCard.className = 'category-card';
+    catCard.draggable = true;
+    catCard.addEventListener('dragstart', e => {
       e.dataTransfer.setData('type','category');
       e.dataTransfer.setData('fromIndex', String(catIndex));
     });
-    catCard.addEventListener('dragover', e=>{
+    catCard.addEventListener('dragover', e => {
       e.preventDefault();
-      const dragType=e.dataTransfer.getData('type');
-      if(dragType==='category'||dragType==='task'){
+      const dragType = e.dataTransfer.getData('type');
+      if(dragType==='category' || dragType==='task'){
         catCard.classList.add('drag-over');
       }
     });
-    catCard.addEventListener('dragleave', ()=>{
+    catCard.addEventListener('dragleave', () => {
       catCard.classList.remove('drag-over');
     });
-    catCard.addEventListener('drop', e=>{
+    catCard.addEventListener('drop', e => {
       e.preventDefault();
       catCard.classList.remove('drag-over');
-      const dragType=e.dataTransfer.getData('type');
+      const dragType = e.dataTransfer.getData('type');
       if(dragType==='category'){
-        const fromIndex=parseInt(e.dataTransfer.getData('fromIndex'),10);
+        const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'),10);
         reorderCategories(fromIndex, catIndex);
       } else if(dragType==='task'){
-        const tid=parseInt(e.dataTransfer.getData('taskId'),10);
+        const tid = parseInt(e.dataTransfer.getData('taskId'),10);
         moveTaskToCategory(tid, cat, null);
       }
     });
 
-    // ヘッダー
-    const catHeader=document.createElement('div');
-    catHeader.className='category-header';
-    catHeader.style.backgroundColor=getCategoryColor(cat);
+    const catHeader = document.createElement('div');
+    catHeader.className = 'category-header';
+    catHeader.style.backgroundColor = getCategoryColor(cat);
 
-    // (1) ハンドル
-    const handleDiv=document.createElement('div');
-    handleDiv.className='cat-handle';
-    handleDiv.textContent='≡';
+    const handleDiv = document.createElement('div');
+    handleDiv.className = 'cat-handle';
+    handleDiv.textContent = '≡';
     catHeader.appendChild(handleDiv);
 
-    // (2) 左: 折りたたみ + cat-name
-    const catInfo=document.createElement('div');
-    catInfo.className='cat-info';
+    // 左: 折りたたみボタン + カテゴリ名 (dblclickで編集) + 合計時間
+    const catInfo = document.createElement('div');
+    catInfo.className = 'cat-info';
 
-    const toggleBtn=document.createElement('button');
-    toggleBtn.className='cat-toggle-btn';
-    toggleBtn.textContent=collapsedCategories[cat] ? '▶':'▼';
-    toggleBtn.addEventListener('click',()=>{
-      toggleCategoryCollapse(cat);
-    });
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'cat-toggle-btn';
+    toggleBtn.textContent = collapsedCategories[cat] ? '▶' : '▼';
+    toggleBtn.addEventListener('click', () => { toggleCategoryCollapse(cat); });
     catInfo.appendChild(toggleBtn);
 
-    // cat-name (ダブルクリックで編集)
-    const catNameSpan=document.createElement('span');
-    catNameSpan.className='cat-name';
-    catNameSpan.textContent= cat || '(未設定)';
-
-    catNameSpan.addEventListener('dblclick', ()=>{
-      // ダブルクリック時 => inputに置き換え
-      const input=document.createElement('input');
-      input.type='text';
-      input.className='cat-name-edit';
-      input.value=(cat||'(未設定)');
+    const catNameSpan = document.createElement('span');
+    catNameSpan.className = 'cat-name';
+    catNameSpan.textContent = cat || '(未設定)';
+    catNameSpan.addEventListener('dblclick', () => {
+      const oldVal = cat;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'cat-name-edit';
+      input.value = cat || '(未設定)';
       catInfo.replaceChild(input, catNameSpan);
-
-      // フォーカスして選択状態に
       input.focus();
       input.select();
-
-      // blur or Enterで確定
-      input.addEventListener('blur', ()=>{
-        confirmCatRename(input.value);
-      });
-      input.addEventListener('keydown',(e)=>{
-        if(e.key==='Enter'){
-          confirmCatRename(input.value);
-        } else if(e.key==='Escape'){
-          // キャンセル => 元に戻す
-          catInfo.replaceChild(catNameSpan, input);
-        }
-      });
-
-      function confirmCatRename(newVal){
-        const oldVal=cat;
-        const finalVal=newVal.trim()||'(未設定)';
-        // 置き換え
-        catNameSpan.textContent=finalVal;
+      function confirmRename(newVal){
+        const finalVal = newVal.trim() || '(未設定)';
+        catNameSpan.textContent = finalVal;
         catInfo.replaceChild(catNameSpan, input);
-        // 実際のカテゴリ名も変更
-        if(finalVal==='(未設定)'){
+        if(finalVal === '(未設定)'){
           renameCategory(oldVal, '');
         } else {
           renameCategory(oldVal, finalVal);
         }
       }
+      input.addEventListener('blur', () => { confirmRename(input.value); });
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          confirmRename(input.value);
+        } else if(e.key === 'Escape'){
+          catInfo.replaceChild(catNameSpan, input);
+        }
+      });
     });
-
     catInfo.appendChild(catNameSpan);
+
+    const sumMs = getCategoryTotalTime(cat);
+    const sumSpan = document.createElement('span');
+    sumSpan.className = 'cat-sum-time';
+    sumSpan.textContent = `合計時間: ${formatTime(sumMs)}`;
+    catInfo.appendChild(sumSpan);
 
     catHeader.appendChild(catInfo);
 
-    // (2.5) カテゴリー合計時間
-    const sumMs= getCategoryTotalTime(cat);
-    const sumSpan=document.createElement('span');
-    sumSpan.className='cat-sum-time';
-    sumSpan.textContent=`合計時間: ${formatTime(sumMs)}`;
-    catInfo.appendChild(sumSpan);
+    // 右: カラー選択 + ＋ボタン
+    const catRight = document.createElement('div');
+    catRight.className = 'cat-right';
 
-    // (3) 右: カラー + "+"
-    const catRight=document.createElement('div');
-    catRight.className='cat-right';
+    const paletteWrap = document.createElement('div');
+    paletteWrap.className = 'color-palette';
+    paletteWrap.style.position = 'relative';
 
-    // カラーパレット
-    const paletteWrap=document.createElement('div');
-    paletteWrap.className='color-palette';
-    paletteWrap.style.position='relative';
-
-    const colorBtn=document.createElement('button');
-    colorBtn.className='color-palette-btn';
-    colorBtn.textContent='Color';
-
-    const preview=document.createElement('div');
-    preview.className='color-preview';
-    preview.style.backgroundColor=getCategoryColor(cat);
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'color-palette-btn';
+    colorBtn.textContent = 'Color';
+    const preview = document.createElement('div');
+    preview.className = 'color-preview';
+    preview.style.backgroundColor = getCategoryColor(cat);
     colorBtn.appendChild(preview);
-
-    const popup=document.createElement('div');
-    popup.className='color-palette-popup';
-
-    PRESET_COLORS.forEach(col=>{
-      const swatch=document.createElement('div');
-      swatch.className='color-swatch';
-      swatch.style.backgroundColor=col;
-      swatch.addEventListener('click',()=>{
-        setCategoryColor(cat,col);
-        preview.style.backgroundColor=col;
+    const popup = document.createElement('div');
+    popup.className = 'color-palette-popup';
+    PRESET_COLORS.forEach(col => {
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch';
+      swatch.style.backgroundColor = col;
+      swatch.addEventListener('click', () => {
+        setCategoryColor(cat, col);
+        preview.style.backgroundColor = col;
         paletteWrap.classList.remove('open');
       });
       popup.appendChild(swatch);
     });
-
     paletteWrap.appendChild(colorBtn);
     paletteWrap.appendChild(popup);
-
-    colorBtn.addEventListener('click',(e)=>{
+    colorBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       paletteWrap.classList.toggle('open');
     });
-    document.addEventListener('click',(evt)=>{
+    document.addEventListener('click', (evt) => {
       if(!paletteWrap.contains(evt.target)){
         paletteWrap.classList.remove('open');
       }
     });
-
     catRight.appendChild(paletteWrap);
 
-    // +ボタン => 新タスク
-    const plusBtn=document.createElement('button');
-    plusBtn.className='cat-add-btn';
-    plusBtn.textContent='+';
-    plusBtn.addEventListener('click',()=>{
-      addTask(cat,'New Task');
-    });
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'cat-add-btn';
+    plusBtn.textContent = '+';
+    plusBtn.addEventListener('click', () => { addTask(cat, 'New Task'); });
     catRight.appendChild(plusBtn);
 
     catHeader.appendChild(catRight);
     catCard.appendChild(catHeader);
 
-    // タスクリスト
+    // タスクリスト (表示状態の場合)
     if(!collapsedCategories[cat]){
-      const taskList=document.createElement('div');
-      taskList.className='task-list';
-
-      const catTasks= tasks.filter(t=>t.category===cat);
-      catTasks.forEach((task, indexInCat)=>{
-        const taskDiv=document.createElement('div');
-        taskDiv.className='task-card';
-        taskDiv.draggable=true;
-        taskDiv.style.backgroundColor= getCategoryColor(cat);
-
-        // ドラッグ
-        taskDiv.addEventListener('dragstart', e=>{
+      const taskList = document.createElement('div');
+      taskList.className = 'task-list';
+      const catTasks = tasks.filter(t => t.category === cat);
+      catTasks.forEach((task, indexInCat) => {
+        const taskDiv = document.createElement('div');
+        taskDiv.className = 'task-card';
+        taskDiv.draggable = true;
+        taskDiv.style.backgroundColor = getCategoryColor(cat);
+        taskDiv.addEventListener('dragstart', e => {
           e.dataTransfer.setData('type','task');
-          e.dataTransfer.setData('taskId',String(task.id));
-          e.dataTransfer.setData('fromCategory',cat);
-          e.dataTransfer.setData('fromIndex',String(indexInCat));
+          e.dataTransfer.setData('taskId', String(task.id));
+          e.dataTransfer.setData('fromCategory', cat);
+          e.dataTransfer.setData('fromIndex', String(indexInCat));
         });
-        taskDiv.addEventListener('dragover', e=>{
+        taskDiv.addEventListener('dragover', e => {
           e.preventDefault();
           if(e.dataTransfer.getData('type')==='task'){
             taskDiv.classList.add('drag-over');
           }
         });
-        taskDiv.addEventListener('dragleave',()=>{
+        taskDiv.addEventListener('dragleave', () => {
           taskDiv.classList.remove('drag-over');
         });
-        taskDiv.addEventListener('drop', e=>{
+        taskDiv.addEventListener('drop', e => {
           e.preventDefault();
           taskDiv.classList.remove('drag-over');
           if(e.dataTransfer.getData('type')==='task'){
-            const fromCat=e.dataTransfer.getData('fromCategory');
-            const fromIndex=parseInt(e.dataTransfer.getData('fromIndex'),10);
-            const tid=parseInt(e.dataTransfer.getData('taskId'),10);
-            if(fromCat===cat){
+            const fromCat = e.dataTransfer.getData('fromCategory');
+            const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'),10);
+            const tid = parseInt(e.dataTransfer.getData('taskId'),10);
+            if(fromCat === cat){
               reorderTasksInCategory(cat, fromIndex, indexInCat);
             } else {
               moveTaskToCategory(tid, cat, indexInCat);
@@ -940,204 +854,382 @@ function renderAll(){
           }
         });
 
-        // (1) ハンドル(≡)
-        const taskHandle=document.createElement('div');
-        taskHandle.className='task-handle';
-        taskHandle.textContent='≡';
+        const taskHandle = document.createElement('div');
+        taskHandle.className = 'task-handle';
+        taskHandle.textContent = '≡';
         taskDiv.appendChild(taskHandle);
 
-        // (2) [カテゴリ欄削除 => なし]
-
-        // (3) タスク名
-        const nameInput=document.createElement('input');
-        nameInput.type='text';
-        nameInput.className='task-name';
-        nameInput.value=task.name;
-        nameInput.addEventListener('change',()=>{
-          task.name=nameInput.value;
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'task-name';
+        nameInput.value = task.name;
+        nameInput.addEventListener('change', () => {
+          task.name = nameInput.value;
           saveToLocalStorage();
         });
         taskDiv.appendChild(nameInput);
 
-        // (4) 時間
-        const timeDiv=document.createElement('div');
-        timeDiv.className='time-display';
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'time-display';
         if(task.running){
-          const now=Date.now();
-          timeDiv.textContent=formatTime(task.elapsedTime+(now-task.startTime));
+          const now = Date.now();
+          timeDiv.textContent = formatTime(task.elapsedTime + (now - task.startTime));
         } else {
-          timeDiv.textContent=formatTime(task.elapsedTime);
+          timeDiv.textContent = formatTime(task.elapsedTime);
         }
         taskDiv.appendChild(timeDiv);
 
-        // (5) ボタン
-        const btnGroup=document.createElement('div');
-        btnGroup.className='btn-group';
-
-        const startStopBtn=document.createElement('button');
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group';
+        const startStopBtn = document.createElement('button');
         if(task.running){
-          startStopBtn.className='stop-btn';
-          startStopBtn.textContent='STOP';
+          startStopBtn.className = 'stop-btn';
+          startStopBtn.textContent = 'STOP';
         } else {
-          startStopBtn.className='start-btn';
-          startStopBtn.textContent='START';
+          startStopBtn.className = 'start-btn';
+          startStopBtn.textContent = 'START';
         }
-        startStopBtn.addEventListener('click',()=>{
-          toggleTask(task.id);
-        });
+        startStopBtn.addEventListener('click', () => { toggleTask(task.id); });
         btnGroup.appendChild(startStopBtn);
 
-        const resetBtn=document.createElement('button');
-        resetBtn.className='reset-btn';
-        resetBtn.textContent='RESET';
-        resetBtn.addEventListener('click',()=>{
-          resetTask(task.id);
-        });
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'reset-btn';
+        resetBtn.textContent = 'RESET';
+        resetBtn.addEventListener('click', () => { resetTask(task.id); });
         btnGroup.appendChild(resetBtn);
 
-        const deleteBtn=document.createElement('button');
-        deleteBtn.className='delete-btn';
-        deleteBtn.textContent='削除';
-        deleteBtn.addEventListener('click',()=>{
-          deleteTask(task.id);
-        });
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', () => { deleteTask(task.id); });
         btnGroup.appendChild(deleteBtn);
 
         taskDiv.appendChild(btnGroup);
-
         taskList.appendChild(taskDiv);
       });
-
       catCard.appendChild(taskList);
     }
-
     categoriesContainer.appendChild(catCard);
   });
-
   updateCategorySuggestions();
+  saveCurrentState();
+  saveToLocalStorage();
 }
 
-/** 指定カテゴリの合計時間(動作中含む) */
-function getCategoryTotalTime(cat){
-  let sum=0;
-  const now=Date.now();
-  tasks.forEach(t=>{
-    if(t.category===cat){
-      let base=t.elapsedTime;
-      if(t.running){
-        base+=(now - t.startTime);
-      }
-      sum+=base;
-    }
-  });
-  return sum;
-}
-
-/* === サジェスト更新 === */
+/* サジェスト更新 */
 function updateCategorySuggestions(){
-  categorySuggestions.innerHTML='';
-  knownCategories.forEach(c=>{
-    const opt=document.createElement('option');
-    opt.value=c;
+  categorySuggestions.innerHTML = "";
+  knownCategories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
     categorySuggestions.appendChild(opt);
   });
 }
 
-/* === 60fps === */
+/* ================================
+   タイマー (60fps 更新)
+================================ */
 function renderRunningState(){
-  let anyRunning=false;
-  const categories= getOrderedCategories();
-  categories.forEach((cat,catIndex)=>{
-    if(collapsedCategories[cat])return;
-    const catTasks= tasks.filter(t=>t.category===cat);
-
-    // カテゴリカードDOM
-    const catCard= categoriesContainer.children[catIndex];
-    if(!catCard)return;
-
-    // タスク更新
-    const taskList=catCard.querySelector('.task-list');
-    if(!taskList)return;
-    const taskCards=taskList.querySelectorAll('.task-card');
-    taskCards.forEach((card,i)=>{
-      const task=catTasks[i];
-      if(!task)return;
-      const timeDiv=card.querySelector('.time-display');
-      const btnGroup=card.querySelector('.btn-group');
-      const startStopBtn= btnGroup.children[0];
+  let anyRunning = false;
+  const categories = getOrderedCategories();
+  categories.forEach((cat, catIndex) => {
+    const catTasks = tasks.filter(t => t.category === cat);
+    let sumMs = 0;
+    const now = Date.now();
+    catTasks.forEach(task => {
+      let base = task.elapsedTime;
       if(task.running){
-        anyRunning=true;
-        const now=Date.now();
-        timeDiv.textContent= formatTime(task.elapsedTime+(now-task.startTime));
-        startStopBtn.className='stop-btn';
-        startStopBtn.textContent='STOP';
-      } else {
-        startStopBtn.className='start-btn';
-        startStopBtn.textContent='START';
+        base += (now - task.startTime);
+        anyRunning = true;
       }
+      sumMs += base;
     });
-
-    // 合計時間も更新
-    const catInfo= catCard.querySelector('.cat-info');
-    if(catInfo){
-      const sumSpan= catInfo.querySelector('.cat-sum-time');
-      if(sumSpan){
-        const sumMs= getCategoryTotalTime(cat);
-        sumSpan.textContent=`合計時間: ${formatTime(sumMs)}`;
+    const catCard = categoriesContainer.children[catIndex];
+    if(catCard){
+      const catInfo = catCard.querySelector('.cat-info');
+      if(catInfo){
+        const sumSpan = catInfo.querySelector('.cat-sum-time');
+        if(sumSpan){
+          sumSpan.textContent = `合計時間: ${formatTime(sumMs)}`;
+        }
+      }
+    }
+    if(!collapsedCategories[cat]){
+      const taskList = catCard.querySelector('.task-list');
+      if(taskList){
+        const taskCards = taskList.querySelectorAll('.task-card');
+        taskCards.forEach((card, i) => {
+          const task = catTasks[i];
+          if(!task) return;
+          const timeDiv = card.querySelector('.time-display');
+          const btnGroup = card.querySelector('.btn-group');
+          const startStopBtn = btnGroup.children[0];
+          if(task.running){
+            const now = Date.now();
+            timeDiv.textContent = formatTime(task.elapsedTime + (now - task.startTime));
+            startStopBtn.className = 'stop-btn';
+            startStopBtn.textContent = 'STOP';
+          } else {
+            timeDiv.textContent = formatTime(task.elapsedTime);
+            startStopBtn.className = 'start-btn';
+            startStopBtn.textContent = 'START';
+          }
+        });
       }
     }
   });
-
   if(!anyRunning){
     clearInterval(globalTimerId);
-    globalTimerId=null;
+    globalTimerId = null;
   }
 }
 function startGlobalTimer(){
-  if(globalTimerId) return;
-  globalTimerId= setInterval(()=>{
-    renderRunningState();
-  },16);
+  if(globalTimerId)return;
+  globalTimerId = setInterval(() => { renderRunningState(); }, 16);
 }
 
-/* === ページ閉じる => STOP === */
-window.addEventListener('beforeunload',()=>{
-  const now= Date.now();
+/* ================================
+   現行状態の保存
+================================ */
+function saveCurrentState(){
+  mainData.tasks = tasks;
+  mainData.collapsedCategories = collapsedCategories;
+  mainData.knownCategories = knownCategories;
+  mainData.categoryOrder = categoryOrder;
+  mainData.categoryColors = categoryColors;
+  saveToLocalStorage();
+}
+
+/* ================================
+   CSVエクスポート (UTF-8 BOM付き)
+   出力項目: Category, Date, TaskName, Time, CategoryTotal
+================================ */
+function exportCsv(){
+  const dateStr = loadedSnapshotDate || new Date().toLocaleDateString();
+  const lines = [];
+  lines.push("Category,Date,TaskName,Time,CategoryTotal");
+  const catMap = new Map();
+  tasks.forEach(t=>{
+    if(!catMap.has(t.category)){
+      catMap.set(t.category, getCategoryTotalTime(t.category));
+    }
+  });
+  tasks.forEach(t=>{
+    let base = t.elapsedTime;
+    if(t.running){
+      base += (Date.now() - t.startTime);
+    }
+    const timeStr = formatTime(base);
+    const catTotalStr = formatTime(catMap.get(t.category) || 0);
+    const row = [
+      `"${t.category}"`,
+      `"${dateStr}"`,
+      `"${t.name}"`,
+      `"${timeStr}"`,
+      `"${catTotalStr}"`
+    ].join(",");
+    lines.push(row);
+  });
+  const csvContent = lines.join("\r\n");
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Stopwatch_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ================================
+   スナップショット機能
+   ・takeSnapshot() : 現在の状態を指定した日付で保存
+   ・loadSnapshot() : 指定したスナップショットを読み込む
+   ・renderSnapshotList() : snapshotDateInputで選択した日付に一致するスナップショットのみ表示
+================================ */
+function takeSnapshot(){
+  const dateStr = snapshotDateInput.value;
+  if(!dateStr){
+    alert("スナップショットの日付を指定してください");
+    return;
+  }
+  const now = new Date();
+  const label = `Snapshot ${now.toLocaleString()} (${dateStr})`;
+  const snap = {
+    id: Date.now(),
+    label,
+    createdAt: now.getTime(),
+    snapshotDate: dateStr,
+    data: {
+      tasks: structuredClone(tasks),
+      collapsedCategories: structuredClone(collapsedCategories),
+      knownCategories: structuredClone(knownCategories),
+      categoryOrder: structuredClone(categoryOrder),
+      categoryColors: structuredClone(categoryColors)
+    }
+  };
+  snapshots.push(snap);
+  saveToLocalStorage();
+  alert(`スナップショットを保存しました: ${label}`);
+  renderSnapshotList();
+}
+function loadSnapshot(snapId){
+  const snap = snapshots.find(s => s.id === snapId);
+  if(!snap){
+    alert("該当スナップショットが見つかりません");
+    return;
+  }
+  tasks = snap.data.tasks || [];
+  collapsedCategories = snap.data.collapsedCategories || {};
+  knownCategories = snap.data.knownCategories || [];
+  categoryOrder = snap.data.categoryOrder || [];
+  categoryColors = snap.data.categoryColors || {};
+  loadedSnapshotDate = snap.snapshotDate || "";
+  alert(`スナップショット「${snap.label}」を読み込みました`);
+  renderAll();
+  if(tasks.some(t => t.running)){
+    startGlobalTimer();
+  }
+}
+
+/* スナップショット一覧を、snapshotDateInput の値でフィルタして表示 */
+function renderSnapshotList(){
+  snapshotListDiv.innerHTML = "";
+  const selectedDate = snapshotDateInput.value;
+  let filtered = [];
+  if(selectedDate){
+    filtered = snapshots.filter(snap => snap.snapshotDate === selectedDate);
+  } else {
+    filtered = snapshots;
+  }
+  if(filtered.length === 0){
+    snapshotListDiv.textContent = "(該当するスナップショットがありません)";
+    return;
+  }
+  // グループ表示は不要の場合、単に一覧表示
+  filtered.forEach(snap => {
+    const btn = document.createElement("button");
+    btn.textContent = snap.label;
+    btn.addEventListener("click", () => {
+      loadSnapshot(snap.id);
+      renderSnapshotList();
+    });
+    snapshotListDiv.appendChild(btn);
+  });
+}
+
+/* ================================
+   タイマー (60fps)
+================================ */
+function renderRunningState(){
+  let anyRunning = false;
+  const categories = getOrderedCategories();
+  categories.forEach((cat, catIndex)=>{
+    const catTasks = tasks.filter(t => t.category === cat);
+    let sumMs = 0;
+    const now = Date.now();
+    catTasks.forEach(task => {
+      let base = task.elapsedTime;
+      if(task.running){
+        base += (now - task.startTime);
+        anyRunning = true;
+      }
+      sumMs += base;
+    });
+    const catCard = categoriesContainer.children[catIndex];
+    if(catCard){
+      const catInfo = catCard.querySelector('.cat-info');
+      if(catInfo){
+        const sumSpan = catInfo.querySelector('.cat-sum-time');
+        if(sumSpan){
+          sumSpan.textContent = `合計時間: ${formatTime(sumMs)}`;
+        }
+      }
+    }
+    if(!collapsedCategories[cat]){
+      const taskList = catCard.querySelector('.task-list');
+      if(taskList){
+        const taskCards = taskList.querySelectorAll('.task-card');
+        taskCards.forEach((card, i)=>{
+          const task = catTasks[i];
+          if(!task)return;
+          const timeDiv = card.querySelector('.time-display');
+          const btnGroup = card.querySelector('.btn-group');
+          const startStopBtn = btnGroup.children[0];
+          if(task.running){
+            const now = Date.now();
+            timeDiv.textContent = formatTime(task.elapsedTime + (now - task.startTime));
+            startStopBtn.className = 'stop-btn';
+            startStopBtn.textContent = 'STOP';
+          } else {
+            timeDiv.textContent = formatTime(task.elapsedTime);
+            startStopBtn.className = 'start-btn';
+            startStopBtn.textContent = 'START';
+          }
+        });
+      }
+    }
+  });
+  if(!anyRunning){
+    clearInterval(globalTimerId);
+    globalTimerId = null;
+  }
+}
+function startGlobalTimer(){
+  if(globalTimerId)return;
+  globalTimerId = setInterval(()=>{
+    renderRunningState();
+  }, 16);
+}
+
+/* ================================
+   ページ閉じるとき
+================================ */
+window.addEventListener('beforeunload', ()=>{
+  const now = Date.now();
   tasks.forEach(t=>{
     if(t.running){
-      t.elapsedTime+=(now-t.startTime);
-      t.running=false;
+      t.elapsedTime += (now - t.startTime);
+      t.running = false;
     }
   });
   saveToLocalStorage();
 });
 
-/* === 初期化 === */
-window.addEventListener('DOMContentLoaded',()=>{
+/* ================================
+   初期化
+================================ */
+window.addEventListener('DOMContentLoaded', ()=>{
   loadFromLocalStorage();
-  cleanupCategories();
   renderAll();
-  if(tasks.some(t=>t.running)){
+  renderSnapshotList();
+  if(tasks.some(t=> t.running)){
     startGlobalTimer();
   }
 });
 
-/* === イベント === */
-addTaskBtn.addEventListener('click',()=>{
-  const cat=categoryInput.value.trim();
-  const nm=taskNameInput.value.trim();
-  addTask(cat,nm);
-  categoryInput.value='';
-  taskNameInput.value='';
+/* ================================
+   イベントハンドラ
+================================ */
+manualSaveBtn.addEventListener('click', ()=>{
+  saveToLocalStorage();
+  alert("手動で保存しました。");
+});
+addTaskBtn.addEventListener('click', ()=>{
+  const cat = categoryInput.value.trim();
+  const nm = taskNameInput.value.trim();
+  addTask(cat, nm);
+  categoryInput.value = "";
+  taskNameInput.value = "";
   categoryInput.focus();
 });
 stopAllBtn.addEventListener('click', stopAllTasks);
 resetAllBtn.addEventListener('click', resetAllTasks);
-
-manualSaveBtn.addEventListener('click',()=>{
-  saveToLocalStorage();
-  alert("手動で保存しました。");
-});
+exportCsvBtn.addEventListener('click', exportCsv);
+takeSnapshotBtn.addEventListener('click', takeSnapshot);
+snapshotDateInput.addEventListener('change', renderSnapshotList);
 </script>
 </body>
 </html>
