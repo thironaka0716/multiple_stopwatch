@@ -820,15 +820,14 @@ function renderSubtask(task, subtask, subIndex) {
 }
   
 /* 時間表示 */
-function formatTime(msTotal){
-  const ms = msTotal % 1000;
-  const sec = Math.floor(msTotal/1000) % 60;
-  const min = Math.floor(msTotal/60000);
-  const mm = String(min).padStart(2, "0");
-  const ss = String(sec).padStart(2, "0");
-  const mss = String(ms).padStart(3, "0");
-  return `${mm}:${ss}.${mss}`;
+function formatTime(msTotal) {
+  const totalSeconds = Math.floor(msTotal / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
+
 function getCategoryTotalTime(cat){
   let sum = 0;
   const now = Date.now();
